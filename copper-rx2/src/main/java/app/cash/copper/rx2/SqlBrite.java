@@ -146,7 +146,7 @@ public final class SqlBrite {
      *
      * @param mapper Maps the current {@link Cursor} row to {@code T}. May not return null.
      */
-    @RequiresApi(Build.VERSION_CODES.N) //
+    @RequiresApi(24) //
     @CheckResult @NonNull //
     public static <T> ObservableOperator<Optional<T>, Query> mapToOptional(
         @NonNull Function<Cursor, T> mapper) {

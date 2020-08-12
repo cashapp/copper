@@ -191,7 +191,7 @@ public final class QueryTest {
     subscriber.assertComplete();
   }
 
-  @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+  @SdkSuppress(minSdkVersion = 24)
   @Test public void mapToOptional() {
     employeesQuery("alice", "Alice Allison")
         .lift(Query.mapToOptional(MAPPER))
@@ -199,7 +199,7 @@ public final class QueryTest {
         .assertValue(Optional.of(new Employee("alice", "Alice Allison")));
   }
 
-  @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+  @SdkSuppress(minSdkVersion = 24)
   @Test public void mapToOptionalThrowsWhenMapperReturnsNull() {
     employeesQuery("alice", "Alice Allison")
         .lift(Query.mapToOptional(new Function<Cursor, Employee>() {
@@ -212,7 +212,7 @@ public final class QueryTest {
         .assertErrorMessage("QueryToOne mapper returned null");
   }
 
-  @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+  @SdkSuppress(minSdkVersion = 24)
   @Test public void mapToOptionalThrowsOnMultipleRows() {
     employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson")
         .lift(Query.mapToOptional(MAPPER))
@@ -221,7 +221,7 @@ public final class QueryTest {
         .assertErrorMessage("Cursor returned more than 1 row");
   }
 
-  @SdkSuppress(minSdkVersion = Build.VERSION_CODES.N)
+  @SdkSuppress(minSdkVersion = 24)
   @Test public void mapToOptionalIgnoresNullCursor() {
     Query nully = new Query() {
       @Nullable @Override public Cursor run() {

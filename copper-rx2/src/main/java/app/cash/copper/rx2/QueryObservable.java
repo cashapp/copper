@@ -100,7 +100,7 @@ public final class QueryObservable extends Observable<Query> {
    *
    * @param mapper Maps the current {@link Cursor} row to {@code T}. May not return null.
    */
-  @RequiresApi(Build.VERSION_CODES.N)
+  @RequiresApi(24)
   @CheckResult @NonNull
   public final <T> Observable<Optional<T>> mapToOptional(@NonNull Function<Cursor, T> mapper) {
     return lift(Query.mapToOptional(mapper));
