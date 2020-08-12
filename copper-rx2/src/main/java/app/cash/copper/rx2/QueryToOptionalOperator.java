@@ -26,7 +26,7 @@ import io.reactivex.observers.DisposableObserver;
 import io.reactivex.plugins.RxJavaPlugins;
 import java.util.Optional;
 
-@RequiresApi(Build.VERSION_CODES.N)
+@RequiresApi(24)
 final class QueryToOptionalOperator<T> implements ObservableOperator<Optional<T>, SqlBrite.Query> {
   private final Function<Cursor, T> mapper;
 
