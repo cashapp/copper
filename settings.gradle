@@ -1,6 +1,3 @@
-include ':sqlbrite'
-include ':sqlbrite-kotlin'
-include ':sqlbrite-lint'
-include ':sample'
+rootProject.name = 'copper'
 
-rootProject.name = 'sqlbrite-root'
+include ':copper-rx2'
