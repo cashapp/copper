@@ -2,8 +2,8 @@ package app.cash.copper.rx2;
 
 import android.database.Cursor;
 import android.database.MatrixCursor;
-import android.support.annotation.Nullable;
-import android.support.test.runner.AndroidJUnit4;
+import androidx.annotation.Nullable;
+import androidx.test.runner.AndroidJUnit4;
 import app.cash.copper.rx2.SqlBrite.Query;
 import io.reactivex.functions.Function;
 import java.util.List;

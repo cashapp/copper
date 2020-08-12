@@ -4,8 +4,12 @@ buildscript {
       'compileSdk': 27,
   ]
   ext.deps = [
-      'supportAnnotations': 'com.android.support:support-annotations:27.0.0',
-      'supportTestRunner': 'com.android.support.test:runner:0.5',
+      'androidx': [
+          'annotations': 'androidx.annotation:annotation:1.0.0',
+          'test': [
+              'runner': 'androidx.test:runner:1.2.0',
+          ],
+      ],
       'kotlinStdLib': "org.jetbrains.kotlin:kotlin-stdlib",
       'rxJava': 'io.reactivex.rxjava2:rxjava:2.1.3',
       'rxAndroid': 'io.reactivex.rxjava2:rxandroid:2.0.1',

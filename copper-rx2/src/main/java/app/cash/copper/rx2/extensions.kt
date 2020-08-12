@@ -18,7 +18,7 @@
 package app.cash.copper.rx2
 
 import android.database.Cursor
-import android.support.annotation.RequiresApi
+import androidx.annotation.RequiresApi
 import app.cash.copper.rx2.SqlBrite.Query
 import io.reactivex.Observable
 import java.util.Optional

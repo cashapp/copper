@@ -4,9 +4,9 @@ apply plugin: 'org.jetbrains.kotlin.android'
 dependencies {
   api deps.rxJava
   api deps.kotlinStdLib
-  implementation deps.supportAnnotations
+  api deps.androidx.annotations
 
-  androidTestImplementation deps.supportTestRunner
+  androidTestImplementation deps.androidx.test.runner
   androidTestImplementation deps.truth
 }
 
@@ -16,7 +16,7 @@ android {
   defaultConfig {
     minSdkVersion versions.minSdk
 
-    testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+    testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
   }
 
   compileOptions {
