@@ -36,7 +36,6 @@ public final class RxContentResolverTest
   private final TestScheduler scheduler = new TestScheduler();
 
   private ContentResolver contentResolver;
-  private RxContentResolver db;
 
   public RxContentResolverTest() {
     super(TestContentProvider.class, AUTHORITY.getAuthority());
@@ -45,7 +44,6 @@ public final class RxContentResolverTest
   @Override protected void setUp() throws Exception {
     super.setUp();
     contentResolver = getMockContentResolver();
-    db = RxContentResolver.create(contentResolver, scheduler);
 
     getProvider().init(getContext().getContentResolver());
   }
@@ -56,7 +54,8 @@ public final class RxContentResolverTest
   }
 
   public void testCreateQueryObservesInsert() {
-    db.createQuery(TABLE, null, null, null, null, false).subscribe(o);
+    RxContentResolver.observeQuery(contentResolver, TABLE, null, null, null, null, false, scheduler)
+      .subscribe(o);
     o.assertCursor().isExhausted();
 
     contentResolver.insert(TABLE, values("key1", "val1"));
@@ -65,7 +64,9 @@ public final class RxContentResolverTest
 
   public void testCreateQueryObservesUpdate() {
     contentResolver.insert(TABLE, values("key1", "val1"));
-    db.createQuery(TABLE, null, null, null, null, false).subscribe(o);
+
+    RxContentResolver.observeQuery(contentResolver, TABLE, null, null, null, null, false, scheduler)
+      .subscribe(o);
     o.assertCursor().hasRow("key1", "val1").isExhausted();
 
     contentResolver.update(TABLE, values("key1", "val2"), null, null);
@@ -74,7 +75,9 @@ public final class RxContentResolverTest
 
   public void testCreateQueryObservesDelete() {
     contentResolver.insert(TABLE, values("key1", "val1"));
-    db.createQuery(TABLE, null, null, null, null, false).subscribe(o);
+
+    RxContentResolver.observeQuery(contentResolver, TABLE, null, null, null, null, false, scheduler)
+      .subscribe(o);
     o.assertCursor().hasRow("key1", "val1").isExhausted();
 
     contentResolver.delete(TABLE, null, null);
@@ -84,7 +87,8 @@ public final class RxContentResolverTest
   public void testInitialValueAndTriggerUsesScheduler() {
     scheduler.runTasksImmediately(false);
 
-    db.createQuery(TABLE, null, null, null, null, false).subscribe(o);
+    RxContentResolver.observeQuery(contentResolver, TABLE, null, null, null, null, false, scheduler)
+      .subscribe(o);
     o.assertNoMoreEvents();
     scheduler.triggerActions();
     o.assertCursor().isExhausted();

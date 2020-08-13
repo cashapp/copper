@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:JvmName("RxContentResolver")
+
 package app.cash.copper.rx2
 
 import android.content.ContentResolver
@@ -27,218 +29,199 @@ import androidx.annotation.WorkerThread
 import io.reactivex.Observable
 import io.reactivex.ObservableOperator
 import io.reactivex.Scheduler
+import io.reactivex.schedulers.Schedulers
 import java.util.Optional
 
 /**
- * A lightweight wrapper around [ContentResolver] which allows for continuously observing
- * the result of a query.
+ * Create an observable which will notify subscribers with a [query][Query] for
+ * execution. Subscribers are responsible for **always** closing [Cursor] instance
+ * returned from the [Query].
+ *
+ * Subscribers will receive an immediate notification for initial data as well as subsequent
+ * notifications for when the supplied `uri`'s data changes. Unsubscribe when you no longer
+ * want updates to a query.
+ *
+ * Since content resolver triggers are inherently asynchronous, items emitted from the returned
+ * observable use [scheduler] which defaults to [Schedulers.io]. For consistency, the immediate
+ * notification sent on subscribe also uses this scheduler. As such, calling
+ * [subscribeOn][Observable.subscribeOn] on the returned observable has no effect.
+ *
+ * Note: To skip the immediate notification and only receive subsequent notifications when data
+ * has changed call `skip(1)` on the returned observable.
+ *
+ * **Warning:** this method does not perform the query! Only by subscribing to the returned
+ * [Observable] will the operation occur.
+ *
+ * @see ContentResolver.query
+ * @see ContentResolver.registerContentObserver
  */
-class RxContentResolver private constructor(
-  val contentResolver: ContentResolver,
-  private val scheduler: Scheduler
-) {
-  companion object {
-    @JvmStatic
-    @CheckResult
-    fun create(
-      contentResolver: ContentResolver,
-      scheduler: Scheduler
-    ): RxContentResolver {
-      return RxContentResolver(contentResolver, scheduler)
+@CheckResult
+fun ContentResolver.observeQuery(
+  uri: Uri,
+  projection: Array<String>? = null,
+  selection: String? = null,
+  selectionArgs: Array<String>? = null,
+  sortOrder: String? = null,
+  notifyForDescendants: Boolean = false,
+  scheduler: Scheduler = Schedulers.io()
+): Observable<Query> {
+  val query =
+    object : Query() {
+      override fun run(): Cursor? {
+        return query(uri, projection, selection, selectionArgs, sortOrder)
+      }
     }
+  val queries =
+    Observable.create<Query> { e ->
+      val observer: ContentObserver = object : ContentObserver(mainThread) {
+        override fun onChange(selfChange: Boolean) {
+          if (!e.isDisposed) {
+            e.onNext(query)
+          }
+        }
+      }
+      registerContentObserver(uri, notifyForDescendants, observer)
+      e.setCancellable { unregisterContentObserver(observer) }
+      if (!e.isDisposed) {
+        e.onNext(query) // Trigger initial query.
+      }
+    }
+  return queries.observeOn(scheduler)
+}
 
-    @JvmStatic
-    private val mainThread = Handler(Looper.getMainLooper())
-  }
+private val mainThread = Handler(Looper.getMainLooper())
 
+/** An executable query. */
+abstract class Query {
   /**
-   * Create an observable which will notify subscribers with a [query][Query] for
-   * execution. Subscribers are responsible for **always** closing [Cursor] instance
-   * returned from the [Query].
+   * Execute the query on the underlying database and return the resulting cursor.
    *
-   * Subscribers will receive an immediate notification for initial data as well as subsequent
-   * notifications for when the supplied `uri`'s data changes. Unsubscribe when you no longer
-   * want updates to a query.
-   *
-   * Since content resolver triggers are inherently asynchronous, items emitted from the returned
-   * observable use the [Scheduler] supplied to [create]. For
-   * consistency, the immediate notification sent on subscribe also uses this scheduler. As such,
-   * calling [subscribeOn][Observable.subscribeOn] on the returned observable has no effect.
-   *
-   * Note: To skip the immediate notification and only receive subsequent notifications when data
-   * has changed call `skip(1)` on the returned observable.
-   *
-   * **Warning:** this method does not perform the query! Only by subscribing to the returned
-   * [Observable] will the operation occur.
-   *
-   * @see ContentResolver.query
-   * @see ContentResolver.registerContentObserver
+   * @return A [Cursor] with query results, or `null` when the query could not be
+   * executed due to a problem with the underlying store. Unfortunately it is not well documented
+   * when `null` is returned. It usually involves a problem in communicating with the
+   * underlying store and should either be treated as failure or ignored for retry at a later
+   * time.
    */
   @CheckResult
-  fun createQuery(
-    uri: Uri,
-    projection: Array<String>?,
-    selection: String?,
-    selectionArgs: Array<String>?,
-    sortOrder: String?,
-    notifyForDescendants: Boolean
-  ): Observable<Query> {
-    val query =
-      object : Query() {
-        override fun run(): Cursor? {
-          return contentResolver.query(uri, projection, selection, selectionArgs, sortOrder)
+  @WorkerThread
+  abstract fun run(): Cursor?
+
+  /**
+   * Execute the query on the underlying database and return an Observable of each row mapped to
+   * `T` by `mapper`.
+   *
+   * Standard usage of this operation is in `flatMap`:
+   * ```
+   * flatMap(q -> q.asRows(Item.MAPPER).toList())
+   * ```
+   *
+   * However, the above is a more-verbose but identical operation as
+   * [Query.mapToList]. This `asRows` method should be used when you need
+   * to limit or filter the items separate from the actual query.
+   * ```flatMap(q -> q.asRows(Item.MAPPER).take(5).toList())
+   * // or...
+   * flatMap(q -> q.asRows(Item.MAPPER).filter(i -> i.isActive).toList())
+   * ```
+   *
+   * Note: Limiting results or filtering will almost always be faster in the database as part of
+   * a query and should be preferred, where possible.
+   *
+   * The resulting observable will be empty if `null` is returned from [run].
+   */
+  @CheckResult
+  fun <T : Any> asRows(mapper: (Cursor) -> T): Observable<T> {
+    return Observable.create { e ->
+      run()?.use { cursor ->
+        while (cursor.moveToNext() && !e.isDisposed) {
+          e.onNext(mapper(cursor))
         }
       }
-    val queries =
-      Observable.create<Query> { e ->
-        val observer: ContentObserver = object : ContentObserver(mainThread) {
-          override fun onChange(selfChange: Boolean) {
-            if (!e.isDisposed) {
-              e.onNext(query)
-            }
-          }
-        }
-        contentResolver.registerContentObserver(uri, notifyForDescendants, observer)
-        e.setCancellable { contentResolver.unregisterContentObserver(observer) }
-        if (!e.isDisposed) {
-          e.onNext(query) // Trigger initial query.
-        }
-      }
-    return queries.observeOn(scheduler)
-  }
-
-  /** An executable query. */
-  abstract class Query {
-    /**
-     * Execute the query on the underlying database and return the resulting cursor.
-     *
-     * @return A [Cursor] with query results, or `null` when the query could not be
-     * executed due to a problem with the underlying store. Unfortunately it is not well documented
-     * when `null` is returned. It usually involves a problem in communicating with the
-     * underlying store and should either be treated as failure or ignored for retry at a later
-     * time.
-     */
-    @CheckResult
-    @WorkerThread
-    abstract fun run(): Cursor?
-
-    /**
-     * Execute the query on the underlying database and return an Observable of each row mapped to
-     * `T` by `mapper`.
-     *
-     * Standard usage of this operation is in `flatMap`:
-     * ```
-     * flatMap(q -> q.asRows(Item.MAPPER).toList())
-     * ```
-     *
-     * However, the above is a more-verbose but identical operation as
-     * [Query.mapToList]. This `asRows` method should be used when you need
-     * to limit or filter the items separate from the actual query.
-     * ```flatMap(q -> q.asRows(Item.MAPPER).take(5).toList())
-     * // or...
-     * flatMap(q -> q.asRows(Item.MAPPER).filter(i -> i.isActive).toList())
-     * ```
-     *
-     * Note: Limiting results or filtering will almost always be faster in the database as part of
-     * a query and should be preferred, where possible.
-     *
-     * The resulting observable will be empty if `null` is returned from [run].
-     */
-    @CheckResult
-    fun <T : Any> asRows(mapper: (Cursor) -> T): Observable<T> {
-      return Observable.create { e ->
-        run()?.use { cursor ->
-          while (cursor.moveToNext() && !e.isDisposed) {
-            e.onNext(mapper(cursor))
-          }
-        }
-        if (!e.isDisposed) {
-          e.onComplete()
-        }
+      if (!e.isDisposed) {
+        e.onComplete()
       }
     }
+  }
 
-    companion object {
-      /**
-       * Transforms a query observable returning a single row to a `T` using [mapper].
-       *
-       * It is an error for a query to pass through this operator with more than 1 row in its result
-       * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
-       * do not emit an item.
-       *
-       * This operator ignores `null` cursors returned from [run].
-       *
-       * @param mapper Maps the current [Cursor] row to `T`. May not return null.
-       */
-      @JvmStatic
-      @CheckResult
-      fun <T : Any> Observable<Query>.mapToOne(
-        mapper: (Cursor) -> T
-      ): Observable<T> {
-        return QueryToOneObservable(this, mapper, null)
-      }
+  companion object {
+    /**
+     * Transforms a query observable returning a single row to a `T` using [mapper].
+     *
+     * It is an error for a query to pass through this operator with more than 1 row in its result
+     * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+     * do not emit an item.
+     *
+     * This operator ignores `null` cursors returned from [run].
+     *
+     * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+     */
+    @JvmStatic
+    @CheckResult
+    fun <T : Any> Observable<Query>.mapToOne(
+      mapper: (Cursor) -> T
+    ): Observable<T> {
+      return QueryToOneObservable(this, mapper, null)
+    }
 
-      /**
-       * Transforms a query observable returning a single row to a `T` using [mapper].
-       *
-       * It is an error for a query to pass through this operator with more than 1 row in its result
-       * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
-       * emit `defaultValue`.
-       *
-       * This operator emits `defaultValue` if `null` is returned from [run].
-       *
-       * @param mapper Maps the current [Cursor] row to `T`. May not return null.
-       * @param default Value returned if result set is empty
-       */
-      @JvmStatic
-      @CheckResult
-      fun <T : Any> Observable<Query>.mapToOneOrDefault(
-        default: T,
-        mapper: (Cursor) -> T
-      ): Observable<T> {
-        return QueryToOneObservable(this, mapper, default)
-      }
+    /**
+     * Transforms a query observable returning a single row to a `T` using [mapper].
+     *
+     * It is an error for a query to pass through this operator with more than 1 row in its result
+     * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+     * emit `defaultValue`.
+     *
+     * This operator emits `defaultValue` if `null` is returned from [run].
+     *
+     * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+     * @param default Value returned if result set is empty
+     */
+    @JvmStatic
+    @CheckResult
+    fun <T : Any> Observable<Query>.mapToOneOrDefault(
+      default: T,
+      mapper: (Cursor) -> T
+    ): Observable<T> {
+      return QueryToOneObservable(this, mapper, default)
+    }
 
-      /**
-       * Creates an [operator][ObservableOperator] which transforms a query returning a
-       * single row to a `Optional<T>` using `mapper`. Use with [Observable.lift].
-       *
-       * It is an error for a query to pass through this operator with more than 1 row in its result
-       * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
-       * emit [Optional.empty()][Optional.empty].
-       *
-       * This operator ignores `null` cursors returned from [run].
-       *
-       * @param mapper Maps the current [Cursor] row to `T`. May not return null.
-       */
-      @JvmStatic
-      @RequiresApi(24)
-      @CheckResult
-      fun <T : Any> Observable<Query>.mapToOptional(
-        mapper: (Cursor) -> T
-      ): Observable<Optional<T>> {
-        return QueryToOptionalObservable(this, mapper)
-      }
+    /**
+     * Creates an [operator][ObservableOperator] which transforms a query returning a
+     * single row to a `Optional<T>` using `mapper`. Use with [Observable.lift].
+     *
+     * It is an error for a query to pass through this operator with more than 1 row in its result
+     * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+     * emit [Optional.empty()][Optional.empty].
+     *
+     * This operator ignores `null` cursors returned from [run].
+     *
+     * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+     */
+    @JvmStatic
+    @RequiresApi(24)
+    @CheckResult
+    fun <T : Any> Observable<Query>.mapToOptional(
+      mapper: (Cursor) -> T
+    ): Observable<Optional<T>> {
+      return QueryToOptionalObservable(this, mapper)
+    }
 
-      /**
-       * Creates an [operator][ObservableOperator] which transforms a query to a
-       * `List<T>` using `mapper`. Use with [Observable.lift].
-       *
-       * Be careful using this operator as it will always consume the entire cursor and create objects
-       * for each row, every time this observable emits a new query. On tables whose queries update
-       * frequently or very large result sets this can result in the creation of many objects.
-       *
-       * This operator ignores `null` cursors returned from [run].
-       *
-       * @param mapper Maps the current [Cursor] row to `T`. May not return null.
-       */
-      @JvmStatic
-      @CheckResult
-      fun <T : Any> Observable<Query>.mapToList(
-        mapper: (Cursor) -> T
-      ): Observable<List<T>> {
-        return QueryToListObservable(this, mapper)
-      }
+    /**
+     * Creates an [operator][ObservableOperator] which transforms a query to a
+     * `List<T>` using `mapper`. Use with [Observable.lift].
+     *
+     * Be careful using this operator as it will always consume the entire cursor and create objects
+     * for each row, every time this observable emits a new query. On tables whose queries update
+     * frequently or very large result sets this can result in the creation of many objects.
+     *
+     * This operator ignores `null` cursors returned from [run].
+     *
+     * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+     */
+    @JvmStatic
+    @CheckResult
+    fun <T : Any> Observable<Query>.mapToList(
+      mapper: (Cursor) -> T
+    ): Observable<List<T>> {
+      return QueryToListObservable(this, mapper)
     }
   }
 }
