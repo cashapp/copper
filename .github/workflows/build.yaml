@@ -9,15 +9,6 @@ jobs:
   build:
     runs-on: macos-latest
 
-    strategy:
-      fail-fast: false
-      matrix:
-        api-level:
-          - 21
-          - 24
-          - 26
-          - 29
-
     steps:
       - uses: actions/checkout@v2
       - uses: gradle/wrapper-validation-action@v1
@@ -27,18 +18,11 @@ jobs:
       - name: Run Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: ${{ matrix.api-level }}
+          api-level: 24
           script: ./gradlew connectedCheck
-        env:
-          API_LEVEL: ${{ matrix.api-level }}
 
-  publish:
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/trunk'
-    needs:
-      - build
-    steps:
       - run: ./gradlew publish
+        if: github.ref == 'refs/heads/trunk'
         env:
           ORG_GRADLE_PROJECT_SONATYPE_NEXUS_USERNAME: ${{ secrets.SONATYPE_NEXUS_USERNAME }}
           ORG_GRADLE_PROJECT_SONATYPE_NEXUS_PASSWORD: ${{ secrets.SONATYPE_NEXUS_PASSWORD }}
