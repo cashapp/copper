@@ -17,19 +17,19 @@ package app.cash.copper.rx2
 
 import android.database.Cursor
 import app.cash.copper.rx2.RxContentResolver.Query
-import io.reactivex.ObservableOperator
+import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.exceptions.Exceptions
-import io.reactivex.functions.Function
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.plugins.RxJavaPlugins
 import java.util.ArrayList
 
-internal class QueryToListOperator<T>(
+internal class QueryToListObservable<T>(
+  private val upstream: Observable<Query>,
   private val mapper: (Cursor) -> T
-) : ObservableOperator<List<T>, Query> {
-  override fun apply(observer: Observer<in List<T>>): Observer<in Query> {
-    return MappingObserver(observer, mapper)
+) : Observable<List<T>>() {
+  override fun subscribeActual(observer: Observer<in List<T>>) {
+    upstream.subscribe(MappingObserver(observer, mapper))
   }
 
   private class MappingObserver<T>(
