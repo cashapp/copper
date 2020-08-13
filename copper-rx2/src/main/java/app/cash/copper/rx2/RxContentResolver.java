@@ -16,9 +16,11 @@
 package app.cash.copper.rx2;
 
 import android.content.ContentResolver;
+import android.database.ContentObserver;
 import android.database.Cursor;
-import android.os.Build;
-import android.util.Log;
+import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import androidx.annotation.CheckResult;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,70 +30,90 @@ import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableOperator;
-import io.reactivex.ObservableTransformer;
 import io.reactivex.Scheduler;
+import io.reactivex.functions.Cancellable;
 import io.reactivex.functions.Function;
 import java.util.List;
 import java.util.Optional;
 
+import static app.cash.copper.rx2.QueryObservable.QUERY_OBSERVABLE;
+
 /**
- * A wrapper around a content provider which allows for continuously
- * observing the result of a query.
+ * A lightweight wrapper around {@link ContentResolver} which allows for continuously observing
+ * the result of a query.
  */
-public final class SqlBrite {
-  static final Logger DEFAULT_LOGGER = new Logger() {
-    @Override public void log(String message) {
-      Log.d("Copper", message);
-    }
-  };
-  static final ObservableTransformer<Query, Query> DEFAULT_TRANSFORMER =
-      new ObservableTransformer<Query, Query>() {
-        @Override public Observable<Query> apply(Observable<Query> queryObservable) {
-          return queryObservable;
-        }
-      };
-
-  public static final class Builder {
-    private Logger logger = DEFAULT_LOGGER;
-    private ObservableTransformer<Query, Query> queryTransformer = DEFAULT_TRANSFORMER;
-
-    @CheckResult
-    public Builder logger(@NonNull Logger logger) {
-      if (logger == null) throw new NullPointerException("logger == null");
-      this.logger = logger;
-      return this;
-    }
-
-    @CheckResult
-    public Builder queryTransformer(@NonNull ObservableTransformer<Query, Query> queryTransformer) {
-      if (queryTransformer == null) throw new NullPointerException("queryTransformer == null");
-      this.queryTransformer = queryTransformer;
-      return this;
-    }
-
-    @CheckResult
-    public SqlBrite build() {
-      return new SqlBrite(logger, queryTransformer);
-    }
+public final class RxContentResolver {
+  @NonNull @CheckResult
+  public static RxContentResolver create(ContentResolver contentResolver, Scheduler scheduler) {
+    return new RxContentResolver(contentResolver, scheduler);
   }
 
-  final Logger logger;
-  final ObservableTransformer<Query, Query> queryTransformer;
+  final Handler contentObserverHandler = new Handler(Looper.getMainLooper());
 
-  SqlBrite(@NonNull Logger logger, @NonNull ObservableTransformer<Query, Query> queryTransformer) {
-    this.logger = logger;
-    this.queryTransformer = queryTransformer;
+  final ContentResolver contentResolver;
+  private final Scheduler scheduler;
+
+  private RxContentResolver(ContentResolver contentResolver, Scheduler scheduler) {
+    this.contentResolver = contentResolver;
+    this.scheduler = scheduler;
   }
 
   /**
-   * Wrap a {@link ContentResolver} for observable queries.
+   * Create an observable which will notify subscribers with a {@linkplain Query query} for
+   * execution. Subscribers are responsible for <b>always</b> closing {@link Cursor} instance
+   * returned from the {@link Query}.
+   * <p>
+   * Subscribers will receive an immediate notification for initial data as well as subsequent
+   * notifications for when the supplied {@code uri}'s data changes. Unsubscribe when you no longer
+   * want updates to a query.
+   * <p>
+   * Since content resolver triggers are inherently asynchronous, items emitted from the returned
+   * observable use the {@link Scheduler} supplied to {@link #create}. For
+   * consistency, the immediate notification sent on subscribe also uses this scheduler. As such,
+   * calling {@link Observable#subscribeOn subscribeOn} on the returned observable has no effect.
+   * <p>
+   * Note: To skip the immediate notification and only receive subsequent notifications when data
+   * has changed call {@code skip(1)} on the returned observable.
+   * <p>
+   * <b>Warning:</b> this method does not perform the query! Only by subscribing to the returned
+   * {@link Observable} will the operation occur.
    *
-   * @param scheduler The {@link Scheduler} on which items from
-   * {@link BriteContentResolver#createQuery} will be emitted.
+   * @see ContentResolver#query(Uri, String[], String, String[], String)
+   * @see ContentResolver#registerContentObserver(Uri, boolean, ContentObserver)
    */
-  @CheckResult @NonNull public BriteContentResolver wrapContentProvider(
-      @NonNull ContentResolver contentResolver, @NonNull Scheduler scheduler) {
-    return new BriteContentResolver(contentResolver, logger, scheduler, queryTransformer);
+  @CheckResult @NonNull
+  public QueryObservable createQuery(@NonNull final Uri uri, @Nullable final String[] projection,
+      @Nullable final String selection, @Nullable final String[] selectionArgs, @Nullable
+      final String sortOrder, final boolean notifyForDescendants) {
+    final Query query = new Query() {
+      @Override public Cursor run() {
+        return contentResolver.query(uri, projection, selection, selectionArgs, sortOrder);
+      }
+    };
+    Observable<Query> queries = Observable.create(new ObservableOnSubscribe<Query>() {
+      @Override public void subscribe(final ObservableEmitter<Query> e) throws Exception {
+        final ContentObserver observer = new ContentObserver(contentObserverHandler) {
+          @Override public void onChange(boolean selfChange) {
+            if (!e.isDisposed()) {
+              e.onNext(query);
+            }
+          }
+        };
+        contentResolver.registerContentObserver(uri, notifyForDescendants, observer);
+        e.setCancellable(new Cancellable() {
+          @Override public void cancel() throws Exception {
+            contentResolver.unregisterContentObserver(observer);
+          }
+        });
+
+        if (!e.isDisposed()) {
+          e.onNext(query); // Trigger initial query.
+        }
+      }
+    });
+    return queries //
+        .observeOn(scheduler) //
+        .to(QUERY_OBSERVABLE);
   }
 
   /** An executable query. */
@@ -226,10 +248,5 @@ public final class SqlBrite {
         }
       });
     }
-  }
-
-  /** A simple indirection for logging debug messages. */
-  public interface Logger {
-    void log(String message);
   }
 }

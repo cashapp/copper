@@ -17,6 +17,7 @@ package app.cash.copper.rx2;
 
 import android.database.Cursor;
 import androidx.annotation.Nullable;
+import app.cash.copper.rx2.RxContentResolver.Query;
 import io.reactivex.ObservableOperator;
 import io.reactivex.Observer;
 import io.reactivex.exceptions.Exceptions;
@@ -24,7 +25,7 @@ import io.reactivex.functions.Function;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.plugins.RxJavaPlugins;
 
-final class QueryToOneOperator<T> implements ObservableOperator<T, SqlBrite.Query> {
+final class QueryToOneOperator<T> implements ObservableOperator<T, Query> {
   private final Function<Cursor, T> mapper;
   private final T defaultValue;
 
@@ -34,11 +35,11 @@ final class QueryToOneOperator<T> implements ObservableOperator<T, SqlBrite.Quer
     this.defaultValue = defaultValue;
   }
 
-  @Override public Observer<? super SqlBrite.Query> apply(Observer<? super T> observer) {
+  @Override public Observer<? super Query> apply(Observer<? super T> observer) {
     return new MappingObserver<>(observer, mapper, defaultValue);
   }
 
-  static final class MappingObserver<T> extends DisposableObserver<SqlBrite.Query> {
+  static final class MappingObserver<T> extends DisposableObserver<Query> {
     private final Observer<? super T> downstream;
     private final Function<Cursor, T> mapper;
     private final T defaultValue;
@@ -53,7 +54,7 @@ final class QueryToOneOperator<T> implements ObservableOperator<T, SqlBrite.Quer
       downstream.onSubscribe(this);
     }
 
-    @Override public void onNext(SqlBrite.Query query) {
+    @Override public void onNext(Query query) {
       try {
         T item = null;
         Cursor cursor = query.run();

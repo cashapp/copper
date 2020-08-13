@@ -16,6 +16,7 @@
 package app.cash.copper.rx2;
 
 import android.database.Cursor;
+import app.cash.copper.rx2.RxContentResolver.Query;
 import io.reactivex.ObservableOperator;
 import io.reactivex.Observer;
 import io.reactivex.exceptions.Exceptions;
@@ -25,18 +26,18 @@ import io.reactivex.plugins.RxJavaPlugins;
 import java.util.ArrayList;
 import java.util.List;
 
-final class QueryToListOperator<T> implements ObservableOperator<List<T>, SqlBrite.Query> {
+final class QueryToListOperator<T> implements ObservableOperator<List<T>, Query> {
   private final Function<Cursor, T> mapper;
 
   QueryToListOperator(Function<Cursor, T> mapper) {
     this.mapper = mapper;
   }
 
-  @Override public Observer<? super SqlBrite.Query> apply(Observer<? super List<T>> observer) {
+  @Override public Observer<? super Query> apply(Observer<? super List<T>> observer) {
     return new MappingObserver<>(observer, mapper);
   }
 
-  static final class MappingObserver<T> extends DisposableObserver<SqlBrite.Query> {
+  static final class MappingObserver<T> extends DisposableObserver<Query> {
     private final Observer<? super List<T>> downstream;
     private final Function<Cursor, T> mapper;
 
@@ -49,7 +50,7 @@ final class QueryToListOperator<T> implements ObservableOperator<List<T>, SqlBri
       downstream.onSubscribe(this);
     }
 
-    @Override public void onNext(SqlBrite.Query query) {
+    @Override public void onNext(Query query) {
       try {
         Cursor cursor = query.run();
         if (cursor == null || isDisposed()) {

@@ -17,7 +17,7 @@ package app.cash.copper.rx2;
 
 import android.database.Cursor;
 import android.database.MatrixCursor;
-import app.cash.copper.rx2.SqlBrite.Query;
+import app.cash.copper.rx2.RxContentResolver.Query;
 import io.reactivex.Observable;
 import io.reactivex.functions.Function;
 import org.junit.Test;

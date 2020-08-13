@@ -19,7 +19,7 @@ package app.cash.copper.rx2
 
 import android.database.Cursor
 import androidx.annotation.RequiresApi
-import app.cash.copper.rx2.SqlBrite.Query
+import app.cash.copper.rx2.RxContentResolver.Query
 import io.reactivex.Observable
 import java.util.Optional
 
