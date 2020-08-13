@@ -4,7 +4,6 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import androidx.annotation.Nullable;
 import androidx.test.runner.AndroidJUnit4;
-import app.cash.copper.rx2.RxContentResolver.Query;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import kotlin.jvm.functions.Function1;

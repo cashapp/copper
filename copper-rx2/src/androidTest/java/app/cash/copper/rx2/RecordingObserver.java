@@ -21,7 +21,6 @@ import io.reactivex.observers.DisposableObserver;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import static app.cash.copper.rx2.RxContentResolver.Query;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 

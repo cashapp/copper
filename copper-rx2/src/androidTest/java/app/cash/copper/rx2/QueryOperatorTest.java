@@ -19,7 +19,6 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import androidx.annotation.Nullable;
 import androidx.test.filters.SdkSuppress;
-import app.cash.copper.rx2.RxContentResolver.Query;
 import io.reactivex.Observable;
 import io.reactivex.observers.TestObserver;
 import java.util.List;
