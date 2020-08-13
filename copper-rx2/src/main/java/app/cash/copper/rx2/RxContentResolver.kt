@@ -175,7 +175,7 @@ class RxContentResolver private constructor(
       fun <T : Any> Observable<Query>.mapToOne(
         mapper: (Cursor) -> T
       ): Observable<T> {
-        return lift(QueryToOneOperator(mapper, null))
+        return QueryToOneObservable(this, mapper, null)
       }
 
       /**
@@ -196,7 +196,7 @@ class RxContentResolver private constructor(
         default: T,
         mapper: (Cursor) -> T
       ): Observable<T> {
-        return lift(QueryToOneOperator(mapper, default))
+        return QueryToOneObservable(this, mapper, default)
       }
 
       /**
@@ -217,7 +217,7 @@ class RxContentResolver private constructor(
       fun <T : Any> Observable<Query>.mapToOptional(
         mapper: (Cursor) -> T
       ): Observable<Optional<T>> {
-        return lift(QueryToOptionalOperator(mapper))
+        return QueryToOptionalObservable(this, mapper)
       }
 
       /**
@@ -237,7 +237,7 @@ class RxContentResolver private constructor(
       fun <T : Any> Observable<Query>.mapToList(
         mapper: (Cursor) -> T
       ): Observable<List<T>> {
-        return lift(QueryToListOperator(mapper))
+        return QueryToListObservable(this, mapper)
       }
     }
   }

@@ -16,28 +16,28 @@
 package app.cash.copper.rx2
 
 import android.database.Cursor
-import androidx.annotation.RequiresApi
 import app.cash.copper.rx2.RxContentResolver.Query
-import io.reactivex.ObservableOperator
+import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.exceptions.Exceptions
-import io.reactivex.functions.Function
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.plugins.RxJavaPlugins
-import java.util.Optional
 
-@RequiresApi(24)
-internal class QueryToOptionalOperator<T>(
-  private val mapper: (Cursor) -> T
-) : ObservableOperator<Optional<T>, Query> {
-  override fun apply(observer: Observer<in Optional<T>>): Observer<in Query> {
-    return MappingObserver(observer, mapper)
+internal class QueryToOneObservable<T>(
+  private val upstream: Observable<Query>,
+  private val mapper: (Cursor) -> T,
+  /** A null `defaultValue` means nothing will be emitted when empty. */
+  private val defaultValue: T?
+) : Observable<T>() {
+  override fun subscribeActual(observer: Observer<in T>) {
+    upstream.subscribe(MappingObserver(observer, mapper, defaultValue))
   }
 
   private class MappingObserver<T>(
-    private val downstream: Observer<in Optional<T>>,
-    private val mapper: (Cursor) -> T
-  ) : DisposableObserver<Query>() {
+    private val downstream: Observer<in T>,
+    private val mapper: (Cursor) -> T,
+    private val defaultValue: T?
+  ) : DisposableObserver<Query?>() {
     override fun onStart() {
       downstream.onSubscribe(this)
     }
@@ -56,7 +56,12 @@ internal class QueryToOptionalOperator<T>(
           }
         }
         if (!isDisposed) {
-          downstream.onNext(Optional.ofNullable(item))
+          if (item != null) {
+            // TODO remove double-bang once on Kotlin 1.4 where 'use' has a contract.
+            downstream.onNext(item!!)
+          } else if (defaultValue != null) {
+            downstream.onNext(defaultValue)
+          }
         }
       } catch (e: Throwable) {
         Exceptions.throwIfFatal(e)
