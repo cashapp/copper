@@ -242,7 +242,7 @@ public final class QueryOperatorTest {
     }
   };
 
-  private static QueryObservable employeesQuery(final String... values) {
+  private static Observable<Query> employeesQuery(final String... values) {
     Query query = new Query() {
       @Override public Cursor run() {
         MatrixCursor cursor = new MatrixCursor(new String[] { "username", "name" });
@@ -252,6 +252,6 @@ public final class QueryOperatorTest {
         return cursor;
       }
     };
-    return new QueryObservable(Observable.just(query));
+    return Observable.just(query);
   }
 }

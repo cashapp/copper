@@ -36,8 +36,6 @@ import io.reactivex.functions.Function;
 import java.util.List;
 import java.util.Optional;
 
-import static app.cash.copper.rx2.QueryObservable.QUERY_OBSERVABLE;
-
 /**
  * A lightweight wrapper around {@link ContentResolver} which allows for continuously observing
  * the result of a query.
@@ -82,7 +80,7 @@ public final class RxContentResolver {
    * @see ContentResolver#registerContentObserver(Uri, boolean, ContentObserver)
    */
   @CheckResult @NonNull
-  public QueryObservable createQuery(@NonNull final Uri uri, @Nullable final String[] projection,
+  public Observable<Query> createQuery(@NonNull final Uri uri, @Nullable final String[] projection,
       @Nullable final String selection, @Nullable final String[] selectionArgs, @Nullable
       final String sortOrder, final boolean notifyForDescendants) {
     final Query query = new Query() {
@@ -111,9 +109,7 @@ public final class RxContentResolver {
         }
       }
     });
-    return queries //
-        .observeOn(scheduler) //
-        .to(QUERY_OBSERVABLE);
+    return queries.observeOn(scheduler);
   }
 
   /** An executable query. */
@@ -215,7 +211,7 @@ public final class RxContentResolver {
      * flatMap(q -> q.asRows(Item.MAPPER).toList())
      * }</pre>
      * However, the above is a more-verbose but identical operation as
-     * {@link QueryObservable#mapToList}. This {@code asRows} method should be used when you need
+     * {@link Query#mapToList}. This {@code asRows} method should be used when you need
      * to limit or filter the items separate from the actual query.
      * <pre>{@code
      * flatMap(q -> q.asRows(Item.MAPPER).take(5).toList())
