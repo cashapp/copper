@@ -17,10 +17,9 @@ package app.cash.copper.rx2;
 
 import android.database.Cursor;
 import android.database.MatrixCursor;
-import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.test.filters.SdkSuppress;
-import app.cash.copper.rx2.SqlBrite.Query;
+import app.cash.copper.rx2.RxContentResolver.Query;
 import io.reactivex.Observable;
 import io.reactivex.functions.Function;
 import io.reactivex.observers.TestObserver;
@@ -31,7 +30,7 @@ import org.junit.Test;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
-public final class QueryTest {
+public final class QueryOperatorTest {
   @Test public void mapToOne() {
     Employee employees = employeesQuery("alice", "Alice Allison")
         .lift(Query.mapToOne(MAPPER))

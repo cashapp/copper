@@ -4,7 +4,7 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import androidx.annotation.Nullable;
 import androidx.test.runner.AndroidJUnit4;
-import app.cash.copper.rx2.SqlBrite.Query;
+import app.cash.copper.rx2.RxContentResolver.Query;
 import io.reactivex.functions.Function;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,30 +12,13 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.junit.Assert.fail;
 
 @RunWith(AndroidJUnit4.class)
 @SuppressWarnings("CheckResult")
-public final class SqlBriteTest {
+public final class QueryAsRowsTest {
   private static final String FIRST_NAME = "first_name";
   private static final String LAST_NAME = "last_name";
   private static final String[] COLUMN_NAMES = { FIRST_NAME, LAST_NAME };
-
-  @Test public void builderDisallowsNull() {
-    SqlBrite.Builder builder = new SqlBrite.Builder();
-    try {
-      builder.logger(null);
-      fail();
-    } catch (NullPointerException e) {
-      assertThat(e).hasMessageThat().isEqualTo("logger == null");
-    }
-    try {
-      builder.queryTransformer(null);
-      fail();
-    } catch (NullPointerException e) {
-      assertThat(e).hasMessageThat().isEqualTo("queryTransformer == null");
-    }
-  }
 
   @Test public void asRowsEmpty() {
     MatrixCursor cursor = new MatrixCursor(COLUMN_NAMES);

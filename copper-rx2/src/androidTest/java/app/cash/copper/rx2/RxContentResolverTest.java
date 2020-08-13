@@ -22,53 +22,30 @@ import android.database.MatrixCursor;
 import android.net.Uri;
 import android.test.ProviderTestCase2;
 import android.test.mock.MockContentProvider;
-import app.cash.copper.rx2.SqlBrite.Query;
-import io.reactivex.Observable;
-import io.reactivex.ObservableSource;
-import io.reactivex.ObservableTransformer;
-import io.reactivex.subjects.PublishSubject;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
-import static com.google.common.truth.Truth.assertThat;
-
-public final class BriteContentResolverTest
-    extends ProviderTestCase2<BriteContentResolverTest.TestContentProvider> {
+public final class RxContentResolverTest
+    extends ProviderTestCase2<RxContentResolverTest.TestContentProvider> {
   private static final Uri AUTHORITY = Uri.parse("content://test_authority");
   private static final Uri TABLE = AUTHORITY.buildUpon().appendPath("test_table").build();
   private static final String KEY = "test_key";
   private static final String VALUE = "test_value";
 
-  private final List<String> logs = new ArrayList<>();
   private final RecordingObserver o = new BlockingRecordingObserver();
   private final TestScheduler scheduler = new TestScheduler();
-  private final PublishSubject<Object> killSwitch = PublishSubject.create();
 
   private ContentResolver contentResolver;
-  private BriteContentResolver db;
+  private RxContentResolver db;
 
-  public BriteContentResolverTest() {
+  public RxContentResolverTest() {
     super(TestContentProvider.class, AUTHORITY.getAuthority());
   }
 
   @Override protected void setUp() throws Exception {
     super.setUp();
     contentResolver = getMockContentResolver();
-
-    SqlBrite.Logger logger = new SqlBrite.Logger() {
-      @Override public void log(String message) {
-        logs.add(message);
-      }
-    };
-    ObservableTransformer<Query, Query> queryTransformer =
-        new ObservableTransformer<Query, Query>() {
-          @Override public ObservableSource<Query> apply(Observable<Query> upstream) {
-            return upstream.takeUntil(killSwitch);
-          }
-        };
-    db = new BriteContentResolver(contentResolver, logger, scheduler, queryTransformer);
+    db = RxContentResolver.create(contentResolver, scheduler);
 
     getProvider().init(getContext().getContentResolver());
   }
@@ -76,24 +53,6 @@ public final class BriteContentResolverTest
   @Override public void tearDown() {
     o.assertNoMoreEvents();
     o.dispose();
-  }
-
-  public void testLoggerEnabled() {
-    db.setLoggingEnabled(true);
-
-    db.createQuery(TABLE, null, null, null, null, false).subscribe(o);
-    o.assertCursor().isExhausted();
-
-    contentResolver.insert(TABLE, values("key1", "value1"));
-    o.assertCursor().hasRow("key1", "value1").isExhausted();
-    assertThat(logs).isNotEmpty();
-  }
-
-  public void testLoggerDisabled() {
-    db.setLoggingEnabled(false);
-
-    contentResolver.insert(TABLE, values("key1", "value1"));
-    assertThat(logs).isEmpty();
   }
 
   public void testCreateQueryObservesInsert() {
@@ -120,27 +79,6 @@ public final class BriteContentResolverTest
 
     contentResolver.delete(TABLE, null, null);
     o.assertCursor().isExhausted();
-  }
-
-  public void testUnsubscribeDoesNotTrigger() {
-    db.createQuery(TABLE, null, null, null, null, false).subscribe(o);
-    o.assertCursor().isExhausted();
-    o.dispose();
-
-    contentResolver.insert(TABLE, values("key1", "val1"));
-    o.assertNoMoreEvents();
-    assertThat(logs).isEmpty();
-  }
-
-  public void testQueryNotNotifiedWhenQueryTransformerDisposed() {
-    db.createQuery(TABLE, null, null, null, null, false).subscribe(o);
-    o.assertCursor().isExhausted();
-
-    killSwitch.onNext("kill");
-    o.assertIsCompleted();
-
-    contentResolver.insert(TABLE, values("key1", "val1"));
-    o.assertNoMoreEvents();
   }
 
   public void testInitialValueAndTriggerUsesScheduler() {
