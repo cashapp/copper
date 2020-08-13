@@ -21,10 +21,10 @@ import androidx.annotation.Nullable;
 import androidx.test.filters.SdkSuppress;
 import app.cash.copper.rx2.RxContentResolver.Query;
 import io.reactivex.Observable;
-import io.reactivex.functions.Function;
 import io.reactivex.observers.TestObserver;
 import java.util.List;
 import java.util.Optional;
+import kotlin.jvm.functions.Function1;
 import org.junit.Test;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -33,18 +33,14 @@ import static org.junit.Assert.fail;
 public final class QueryOperatorTest {
   @Test public void mapToOne() {
     Employee employees = employeesQuery("alice", "Alice Allison")
-        .lift(Query.mapToOne(MAPPER))
+        .to(o -> Query.mapToOne(o, MAPPER))
         .blockingFirst();
     assertThat(employees).isEqualTo(new Employee("alice", "Alice Allison"));
   }
 
   @Test public void mapToOneThrowsWhenMapperReturnsNull() {
     employeesQuery("alice", "Alice Allison")
-        .lift(Query.mapToOne(new Function<Cursor, Employee>() {
-          @Override public Employee apply(Cursor cursor) throws Exception {
-            return null;
-          }
-        }))
+        .to(o -> Query.mapToOne(o, c -> null))
         .test()
         .assertError(NullPointerException.class)
         .assertErrorMessage("QueryToOne mapper returned null");
@@ -53,7 +49,7 @@ public final class QueryOperatorTest {
   @Test public void mapToOneThrowsOnMultipleRows() {
     Observable<Employee> employees =
         employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson")
-            .lift(Query.mapToOne(MAPPER));
+            .to(o -> Query.mapToOne(o, MAPPER));
     try {
       employees.blockingFirst();
       fail();
@@ -71,7 +67,7 @@ public final class QueryOperatorTest {
 
     TestObserver<Employee> observer = new TestObserver<>();
     Observable.just(nully)
-        .lift(Query.mapToOne(MAPPER))
+        .to(o -> Query.mapToOne(o, MAPPER))
         .subscribe(observer);
 
     observer.assertNoValues();
@@ -80,28 +76,14 @@ public final class QueryOperatorTest {
 
   @Test public void mapToOneOrDefault() {
     Employee employees = employeesQuery("alice", "Alice Allison")
-        .lift(Query.mapToOneOrDefault(
-            MAPPER, new Employee("fred", "Fred Frederson")))
+        .to(o -> Query.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"), MAPPER))
         .blockingFirst();
     assertThat(employees).isEqualTo(new Employee("alice", "Alice Allison"));
   }
 
-  @Test public void mapToOneOrDefaultDisallowsNullDefault() {
-    try {
-      Query.mapToOneOrDefault(MAPPER, null);
-      fail();
-    } catch (NullPointerException e) {
-      assertThat(e).hasMessageThat().isEqualTo("defaultValue == null");
-    }
-  }
-
   @Test public void mapToOneOrDefaultThrowsWhenMapperReturnsNull() {
     employeesQuery("alice", "Alice Allison")
-        .lift(Query.mapToOneOrDefault(new Function<Cursor, Employee>() {
-          @Override public Employee apply(Cursor cursor) throws Exception {
-            return null;
-          }
-        }, new Employee("fred", "Fred Frederson")))
+        .to(o -> Query.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"), c -> null))
         .test()
         .assertError(NullPointerException.class)
         .assertErrorMessage("QueryToOne mapper returned null");
@@ -110,8 +92,7 @@ public final class QueryOperatorTest {
   @Test public void mapToOneOrDefaultThrowsOnMultipleRows() {
     Observable<Employee> employees =
         employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson")
-            .lift(Query.mapToOneOrDefault(
-                MAPPER, new Employee("fred", "Fred Frederson")));
+            .to(o -> Query.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"), MAPPER));
     try {
       employees.blockingFirst();
       fail();
@@ -130,7 +111,7 @@ public final class QueryOperatorTest {
 
     TestObserver<Employee> observer = new TestObserver<>();
     Observable.just(nully)
-        .lift(Query.mapToOneOrDefault(MAPPER, defaultEmployee))
+        .to(o -> Query.mapToOneOrDefault(o, defaultEmployee, MAPPER))
         .subscribe(observer);
 
     observer.assertValues(defaultEmployee);
@@ -140,7 +121,7 @@ public final class QueryOperatorTest {
   @Test public void mapToList() {
     List<Employee> employees =
         employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson")
-            .lift(Query.mapToList(MAPPER))
+            .to(o -> Query.mapToList(o, MAPPER))
             .blockingFirst();
     assertThat(employees).containsExactly( //
         new Employee("alice", "Alice Allison"), //
@@ -150,22 +131,22 @@ public final class QueryOperatorTest {
 
   @Test public void mapToListEmptyWhenNoRows() {
     List<Employee> employees = employeesQuery()
-        .lift(Query.mapToList(MAPPER))
+        .to(o -> Query.mapToList(o, MAPPER))
         .blockingFirst();
     assertThat(employees).isEmpty();
   }
 
   @Test public void mapToListReturnsNullOnMapperNull() {
-    Function<Cursor, Employee> mapToNull = new Function<Cursor, Employee>() {
+    Function1<Cursor, Employee> mapToNull = new Function1<Cursor, Employee>() {
       private int count;
 
-      @Override public Employee apply(Cursor cursor) throws Exception {
-        return count++ == 2 ? null : MAPPER.apply(cursor);
+      @Override public Employee invoke(Cursor cursor) {
+        return count++ == 2 ? null : MAPPER.invoke(cursor);
       }
     };
     List<Employee> employees =
         employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson")
-            .lift(Query.mapToList(mapToNull)) //
+            .to(o -> Query.mapToList(o, mapToNull)) //
             .blockingFirst();
 
     assertThat(employees).containsExactly(
@@ -183,7 +164,7 @@ public final class QueryOperatorTest {
 
     TestObserver<List<Employee>> subscriber = new TestObserver<>();
     Observable.just(nully)
-        .lift(Query.mapToList(MAPPER))
+        .to(o -> Query.mapToList(o, MAPPER))
         .subscribe(subscriber);
 
     subscriber.assertNoValues();
@@ -193,7 +174,7 @@ public final class QueryOperatorTest {
   @SdkSuppress(minSdkVersion = 24)
   @Test public void mapToOptional() {
     employeesQuery("alice", "Alice Allison")
-        .lift(Query.mapToOptional(MAPPER))
+        .to(o -> Query.mapToOptional(o, MAPPER))
         .test()
         .assertValue(Optional.of(new Employee("alice", "Alice Allison")));
   }
@@ -201,11 +182,7 @@ public final class QueryOperatorTest {
   @SdkSuppress(minSdkVersion = 24)
   @Test public void mapToOptionalThrowsWhenMapperReturnsNull() {
     employeesQuery("alice", "Alice Allison")
-        .lift(Query.mapToOptional(new Function<Cursor, Employee>() {
-          @Override public Employee apply(Cursor cursor) throws Exception {
-            return null;
-          }
-        }))
+        .to(o -> Query.mapToOptional(o, c -> null))
         .test()
         .assertError(NullPointerException.class)
         .assertErrorMessage("QueryToOne mapper returned null");
@@ -214,7 +191,7 @@ public final class QueryOperatorTest {
   @SdkSuppress(minSdkVersion = 24)
   @Test public void mapToOptionalThrowsOnMultipleRows() {
     employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson")
-        .lift(Query.mapToOptional(MAPPER))
+        .to(o -> Query.mapToOptional(o, MAPPER))
         .test()
         .assertError(IllegalStateException.class)
         .assertErrorMessage("Cursor returned more than 1 row");
@@ -229,18 +206,14 @@ public final class QueryOperatorTest {
     };
 
     Observable.just(nully)
-        .lift(Query.mapToOptional(MAPPER))
+        .to(o -> Query.mapToOptional(o, MAPPER))
         .test()
         .assertValue(Optional.<Employee>empty());
   }
 
-  static final Function<Cursor, Employee> MAPPER = new Function<Cursor, Employee>() {
-    @Override public Employee apply(Cursor cursor) {
-      return new Employee(
-          cursor.getString(cursor.getColumnIndexOrThrow("username")),
-          cursor.getString(cursor.getColumnIndexOrThrow("name")));
-    }
-  };
+  static final Function1<Cursor, Employee> MAPPER = cursor -> new Employee(
+      cursor.getString(cursor.getColumnIndexOrThrow("username")),
+      cursor.getString(cursor.getColumnIndexOrThrow("name")));
 
   private static Observable<Query> employeesQuery(final String... values) {
     Query query = new Query() {

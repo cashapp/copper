@@ -5,9 +5,9 @@ import android.database.MatrixCursor;
 import androidx.annotation.Nullable;
 import androidx.test.runner.AndroidJUnit4;
 import app.cash.copper.rx2.RxContentResolver.Query;
-import io.reactivex.functions.Function;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import kotlin.jvm.functions.Function1;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -44,11 +44,9 @@ public final class QueryAsRowsTest {
 
     Query query = new CursorQuery(cursor);
     final AtomicInteger count = new AtomicInteger();
-    query.asRows(new Function<Cursor, Name>() {
-      @Override public Name apply(Cursor cursor) throws Exception {
-        count.incrementAndGet();
-        return Name.MAP.apply(cursor);
-      }
+    query.asRows(c -> {
+      count.incrementAndGet();
+      return Name.MAP.invoke(c);
     }).take(1).blockingFirst();
     assertThat(count.get()).isEqualTo(1);
   }
@@ -61,24 +59,18 @@ public final class QueryAsRowsTest {
     };
 
     final AtomicInteger count = new AtomicInteger();
-    nully.asRows(new Function<Cursor, Name>() {
-      @Override public Name apply(Cursor cursor) throws Exception {
-        count.incrementAndGet();
-        return Name.MAP.apply(cursor);
-      }
+    nully.asRows(cursor -> {
+      count.incrementAndGet();
+      return Name.MAP.invoke(cursor);
     }).test().assertNoValues().assertComplete();
 
     assertThat(count.get()).isEqualTo(0);
   }
 
   static final class Name {
-    static final Function<Cursor, Name> MAP = new Function<Cursor, Name>() {
-      @Override public Name apply(Cursor cursor) {
-        return new Name( //
-            cursor.getString(cursor.getColumnIndexOrThrow(FIRST_NAME)),
-            cursor.getString(cursor.getColumnIndexOrThrow(LAST_NAME)));
-      }
-    };
+    static final Function1<Cursor, Name> MAP = cursor -> new Name( //
+        cursor.getString(cursor.getColumnIndexOrThrow(FIRST_NAME)),
+        cursor.getString(cursor.getColumnIndexOrThrow(LAST_NAME)));
 
     final String first;
     final String last;
