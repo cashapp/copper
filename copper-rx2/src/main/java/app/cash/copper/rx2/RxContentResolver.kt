@@ -27,7 +27,6 @@ import androidx.annotation.WorkerThread
 import io.reactivex.Observable
 import io.reactivex.ObservableOperator
 import io.reactivex.Scheduler
-import io.reactivex.functions.Function
 import java.util.Optional
 
 /**
@@ -47,9 +46,10 @@ class RxContentResolver private constructor(
     ): RxContentResolver {
       return RxContentResolver(contentResolver, scheduler)
     }
-  }
 
-  val contentObserverHandler = Handler(Looper.getMainLooper())
+    @JvmStatic
+    private val mainThread = Handler(Looper.getMainLooper())
+  }
 
   /**
    * Create an observable which will notify subscribers with a [query][Query] for
@@ -91,7 +91,7 @@ class RxContentResolver private constructor(
       }
     val queries =
       Observable.create<Query> { e ->
-        val observer: ContentObserver = object : ContentObserver(contentObserverHandler) {
+        val observer: ContentObserver = object : ContentObserver(mainThread) {
           override fun onChange(selfChange: Boolean) {
             if (!e.isDisposed) {
               e.onNext(query)
