@@ -28,7 +28,6 @@ import androidx.annotation.RequiresApi
 import app.cash.copper.ContentResolverQuery
 import app.cash.copper.Query
 import io.reactivex.Observable
-import io.reactivex.ObservableOperator
 import io.reactivex.Scheduler
 import io.reactivex.schedulers.Schedulers
 import java.util.Optional
@@ -123,7 +122,6 @@ fun <T : Any> Query.asRows(mapper: (Cursor) -> T): Observable<T> {
   }
 }
 
-
 /**
  * Transforms a query observable returning a single row to a `T` using [mapper].
  *
@@ -136,7 +134,7 @@ fun <T : Any> Query.asRows(mapper: (Cursor) -> T): Observable<T> {
  * @param mapper Maps the current [Cursor] row to `T`. May not return null.
  */
 @CheckResult
-fun <T : Any> Observable<Query>.mapToOne(
+fun <T : Any> Observable<out Query>.mapToOne(
   mapper: (Cursor) -> T
 ): Observable<T> {
   return QueryToOneObservable(this, mapper, null)
@@ -155,7 +153,7 @@ fun <T : Any> Observable<Query>.mapToOne(
  * @param default Value returned if result set is empty
  */
 @CheckResult
-fun <T : Any> Observable<Query>.mapToOneOrDefault(
+fun <T : Any> Observable<out Query>.mapToOneOrDefault(
   default: T,
   mapper: (Cursor) -> T
 ): Observable<T> {
@@ -163,8 +161,7 @@ fun <T : Any> Observable<Query>.mapToOneOrDefault(
 }
 
 /**
- * Creates an [operator][ObservableOperator] which transforms a query returning a
- * single row to a `Optional<T>` using `mapper`. Use with [Observable.lift].
+ * Transforms a query observable returning a single row to a `Optional<T>` using `mapper`.
  *
  * It is an error for a query to pass through this operator with more than 1 row in its result
  * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
@@ -176,15 +173,14 @@ fun <T : Any> Observable<Query>.mapToOneOrDefault(
  */
 @RequiresApi(24)
 @CheckResult
-fun <T : Any> Observable<Query>.mapToOptional(
+fun <T : Any> Observable<out Query>.mapToOptional(
   mapper: (Cursor) -> T
 ): Observable<Optional<T>> {
   return QueryToOptionalObservable(this, mapper)
 }
 
 /**
- * Creates an [operator][ObservableOperator] which transforms a query to a
- * `List<T>` using `mapper`. Use with [Observable.lift].
+ * Transforms a query observable to a `List<T>` using `mapper`.
  *
  * Be careful using this operator as it will always consume the entire cursor and create objects
  * for each row, every time this observable emits a new query. On tables whose queries update
@@ -195,7 +191,7 @@ fun <T : Any> Observable<Query>.mapToOptional(
  * @param mapper Maps the current [Cursor] row to `T`. May not return null.
  */
 @CheckResult
-fun <T : Any> Observable<Query>.mapToList(
+fun <T : Any> Observable<out Query>.mapToList(
   mapper: (Cursor) -> T
 ): Observable<List<T>> {
   return QueryToListObservable(this, mapper)

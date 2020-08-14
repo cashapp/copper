@@ -25,7 +25,7 @@ import io.reactivex.plugins.RxJavaPlugins
 import java.util.ArrayList
 
 internal class QueryToListObservable<T : Any>(
-  private val upstream: Observable<Query>,
+  private val upstream: Observable<out Query>,
   private val mapper: (Cursor) -> T
 ) : Observable<List<T>>() {
   override fun subscribeActual(observer: Observer<in List<T>>) {

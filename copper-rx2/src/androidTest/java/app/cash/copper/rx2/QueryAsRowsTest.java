@@ -4,6 +4,7 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import androidx.test.runner.AndroidJUnit4;
 import app.cash.copper.Query;
+import app.cash.copper.testing.NullQuery;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import kotlin.jvm.functions.Function1;
@@ -51,10 +52,8 @@ public final class QueryAsRowsTest {
   }
 
   @Test public void asRowsEmptyWhenNullCursor() {
-    Query nully = () -> null;
-
     final AtomicInteger count = new AtomicInteger();
-    RxContentResolver.asRows(nully, cursor -> {
+    RxContentResolver.asRows(NullQuery.INSTANCE, cursor -> {
       count.incrementAndGet();
       return Name.MAP.invoke(cursor);
     }).test().assertNoValues().assertComplete();

@@ -19,6 +19,7 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import androidx.test.filters.SdkSuppress;
 import app.cash.copper.Query;
+import app.cash.copper.testing.NullQuery;
 import io.reactivex.Observable;
 import io.reactivex.observers.TestObserver;
 import java.util.List;
@@ -58,10 +59,8 @@ public final class QueryOperatorTest {
   }
 
   @Test public void mapToOneIgnoresNullCursor() {
-    Query nully = () -> null;
-
     TestObserver<Employee> observer = new TestObserver<>();
-    Observable.just(nully)
+    Observable.just(NullQuery.INSTANCE)
         .to(o -> RxContentResolver.mapToOne(o, MAPPER))
         .subscribe(observer);
 
@@ -98,10 +97,9 @@ public final class QueryOperatorTest {
 
   @Test public void mapToOneOrDefaultReturnsDefaultWhenNullCursor() {
     Employee defaultEmployee = new Employee("bob", "Bob Bobberson");
-    Query nully = () -> null;
 
     TestObserver<Employee> observer = new TestObserver<>();
-    Observable.just(nully)
+    Observable.just(NullQuery.INSTANCE)
         .to(o -> RxContentResolver.mapToOneOrDefault(o, defaultEmployee, MAPPER))
         .subscribe(observer);
 
@@ -147,10 +145,8 @@ public final class QueryOperatorTest {
   }
 
   @Test public void mapToListIgnoresNullCursor() {
-    Query nully = () -> null;
-
     TestObserver<List<Employee>> subscriber = new TestObserver<>();
-    Observable.just(nully)
+    Observable.just(NullQuery.INSTANCE)
         .to(o -> RxContentResolver.mapToList(o, MAPPER))
         .subscribe(subscriber);
 
@@ -186,9 +182,7 @@ public final class QueryOperatorTest {
 
   @SdkSuppress(minSdkVersion = 24)
   @Test public void mapToOptionalIgnoresNullCursor() {
-    Query nully = () -> null;
-
-    Observable.just(nully)
+    Observable.just(NullQuery.INSTANCE)
         .to(o -> RxContentResolver.mapToOptional(o, MAPPER))
         .test()
         .assertValue(Optional.empty());

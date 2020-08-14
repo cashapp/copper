@@ -27,7 +27,7 @@ import java.util.Optional
 
 @RequiresApi(24)
 internal class QueryToOptionalObservable<T : Any>(
-  private val upstream: Observable<Query>,
+  private val upstream: Observable<out Query>,
   private val mapper: (Cursor) -> T
 ) : Observable<Optional<T>>() {
   override fun subscribeActual(observer: Observer<in Optional<T>>) {
