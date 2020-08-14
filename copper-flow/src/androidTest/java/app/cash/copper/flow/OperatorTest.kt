@@ -15,16 +15,13 @@
  */
 package app.cash.copper.flow
 
-import android.database.Cursor
-import android.database.MatrixCursor
-import app.cash.copper.Query
 import app.cash.copper.testing.Employee
+import app.cash.copper.testing.Employee.Companion.queryOf
 import app.cash.copper.testing.NullQuery
 import app.cash.copper.testing.assert
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -34,8 +31,8 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class OperatorTest {
   @Test fun mapToOne() = runBlocking {
-    employeesQuery("alice", "Alice Allison")
-      .mapToOne(mapper = employeeMapper)
+    flowOf(queryOf("alice", "Alice Allison"))
+      .mapToOne(mapper = Employee.MAPPER)
       .test {
         assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
         expectComplete()
@@ -43,8 +40,8 @@ class OperatorTest {
   }
 
   @Test fun mapToOneThrowsOnMultipleRows() = runBlocking {
-    employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson")
-      .mapToOne(mapper = employeeMapper)
+    flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
+      .mapToOne(mapper = Employee.MAPPER)
       .test {
         expectError().assert {
           isInstanceOf(IllegalStateException::class.java)
@@ -55,15 +52,15 @@ class OperatorTest {
 
   @Test fun mapToOneIgnoresNullCursor() = runBlocking {
     flowOf(NullQuery)
-      .mapToOne(mapper = employeeMapper)
+      .mapToOne(mapper = Employee.MAPPER)
       .test {
         expectComplete()
       }
   }
 
   @Test fun mapToOneOrDefault() = runBlocking {
-    employeesQuery("alice", "Alice Allison")
-      .mapToOneOrDefault(Employee("fred", "Fred Frederson"), mapper = employeeMapper)
+    flowOf(queryOf("alice", "Alice Allison"))
+      .mapToOneOrDefault(Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
       .test {
         assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
         expectComplete()
@@ -71,8 +68,8 @@ class OperatorTest {
   }
 
   @Test fun mapToOneOrDefaultThrowsOnMultipleRows() = runBlocking {
-    employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson")
-      .mapToOneOrDefault(Employee("fred", "Fred Frederson"), mapper = employeeMapper)
+    flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
+      .mapToOneOrDefault(Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
       .test {
         expectError().assert {
           isInstanceOf(IllegalStateException::class.java)
@@ -83,7 +80,7 @@ class OperatorTest {
 
   @Test fun mapToOneOrDefaultReturnsDefaultWhenNullCursor() = runBlocking {
     flowOf(NullQuery)
-      .mapToOneOrDefault(Employee("bob", "Bob Bobberson"), mapper = employeeMapper)
+      .mapToOneOrDefault(Employee("bob", "Bob Bobberson"), mapper = Employee.MAPPER)
       .test {
         assertThat(expectItem()).isEqualTo(Employee("bob", "Bob Bobberson"))
         expectComplete()
@@ -91,8 +88,8 @@ class OperatorTest {
   }
 
   @Test fun mapToList() = runBlocking {
-    employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson")
-      .mapToList(mapper = employeeMapper)
+    flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson"))
+      .mapToList(mapper = Employee.MAPPER)
       .test {
         assertThat(expectItem()).containsExactly(
           Employee("alice", "Alice Allison"),
@@ -104,8 +101,8 @@ class OperatorTest {
   }
 
   @Test fun mapToListEmptyWhenNoRows() = runBlocking {
-    employeesQuery()
-      .mapToList(mapper = employeeMapper)
+    flowOf(queryOf())
+      .mapToList(mapper = Employee.MAPPER)
       .test {
         assertThat(expectItem()).isEmpty()
         expectComplete()
@@ -114,15 +111,15 @@ class OperatorTest {
 
   @Test fun mapToListIgnoresNullCursor() = runBlocking {
     flowOf(NullQuery)
-      .mapToList(mapper = employeeMapper)
+      .mapToList(mapper = Employee.MAPPER)
       .test {
         expectComplete()
       }
   }
 
   @Test fun mapToNullable() = runBlocking {
-    employeesQuery("alice", "Alice Allison")
-      .mapToNullable(mapper = employeeMapper)
+    flowOf(queryOf("alice", "Alice Allison"))
+      .mapToNullable(mapper = Employee.MAPPER)
       .test {
         assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
         expectComplete()
@@ -130,8 +127,8 @@ class OperatorTest {
   }
 
   @Test fun mapToNullableThrowsOnMultipleRows() = runBlocking {
-    employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson")
-      .mapToNullable(mapper = employeeMapper)
+    flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
+      .mapToNullable(mapper = Employee.MAPPER)
       .test {
         expectError().assert {
           isInstanceOf(IllegalStateException::class.java)
@@ -142,29 +139,9 @@ class OperatorTest {
 
   @Test fun mapToNullableIgnoresNullCursor() = runBlocking {
     flowOf(NullQuery)
-      .mapToNullable(mapper = employeeMapper)
+      .mapToNullable(mapper = Employee.MAPPER)
       .test {
         expectComplete()
       }
-  }
-
-  private val employeeMapper = { cursor: Cursor ->
-    Employee(
-      cursor.getString(cursor.getColumnIndexOrThrow("username")),
-      cursor.getString(cursor.getColumnIndexOrThrow("name"))
-    )
-  }
-
-  private fun employeesQuery(vararg values: String): Flow<Query> {
-    val query = object : Query {
-      override fun run(): Cursor? {
-        val cursor = MatrixCursor(arrayOf("username", "name"))
-        for (i in values.indices step 2) {
-          cursor.addRow(arrayOf<Any>(values[i], values[i + 1]))
-        }
-        return cursor
-      }
-    }
-    return flowOf(query)
   }
 }

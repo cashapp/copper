@@ -28,9 +28,13 @@ import app.cash.copper.ContentResolverQuery
 import app.cash.copper.Query
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
+import kotlinx.coroutines.channels.Channel.Factory.RENDEZVOUS
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.withContext
@@ -86,6 +90,45 @@ fun ContentResolver.observeQuery(
 }
 
 private val mainThread = Handler(Looper.getMainLooper())
+
+/**
+ * Execute the query on the underlying database and return a flow of each row mapped to
+ * `T` by `mapper`.
+ *
+ * Standard usage of this operation is in `flatMap`:
+ * ```
+ * flatMap(q -> q.asRows(Item.MAPPER).toList())
+ * ```
+ *
+ * However, the above is a more-verbose but identical operation as
+ * [mapToList]. This `asRows` function should be used when you need
+ * to limit or filter the items separate from the actual query.
+ * ```flatMap(q -> q.asRows(Item.MAPPER).take(5).toList())
+ * // or...
+ * flatMap(q -> q.asRows(Item.MAPPER).filter(i -> i.isActive).toList())
+ * ```
+ *
+ * Note: Limiting results or filtering will almost always be faster in the database as part of
+ * a query and should be preferred, where possible.
+ *
+ * The resulting flow will be empty if `null` is returned from [Query.run].
+ */
+@ExperimentalCoroutinesApi // Relies on channelFlow.
+@CheckResult
+fun <T : Any> Query.asRows(
+  dispatcher: CoroutineDispatcher = Dispatchers.IO,
+  mapper: (Cursor) -> T
+): Flow<T> {
+  return channelFlow {
+    withContext(dispatcher) {
+      run()?.use { cursor ->
+        while (cursor.moveToNext()) {
+          send(mapper(cursor))
+        }
+      }
+    }
+  }.buffer(RENDEZVOUS)
+}
 
 /**
  * Transforms a query flow returning a single row to a `T` using [mapper].
