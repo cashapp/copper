@@ -24,7 +24,7 @@ import io.reactivex.observers.DisposableObserver
 import io.reactivex.plugins.RxJavaPlugins
 
 internal class QueryToOneObservable<T : Any>(
-  private val upstream: Observable<Query>,
+  private val upstream: Observable<out Query>,
   private val mapper: (Cursor) -> T,
   /** A null `defaultValue` means nothing will be emitted when empty. */
   private val defaultValue: T?
