@@ -1,16 +1,9 @@
 apply plugin: 'com.android.library'
 apply plugin: 'org.jetbrains.kotlin.android'
-apply plugin: 'com.vanniktech.maven.publish'
 
 dependencies {
-  api project(':copper')
-  api deps.rxJava
   api deps.kotlinStdLib
   api deps.androidx.annotations
-
-  androidTestImplementation project(':copper-testing')
-  androidTestImplementation deps.androidx.test.runner
-  androidTestImplementation deps.truth
 }
 
 android {
@@ -18,8 +11,6 @@ android {
 
   defaultConfig {
     minSdkVersion versions.minSdk
-
-    testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
   }
 
   compileOptions {
