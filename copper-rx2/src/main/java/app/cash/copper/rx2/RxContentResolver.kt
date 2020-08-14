@@ -66,7 +66,7 @@ fun ContentResolver.observeQuery(
   scheduler: Scheduler = Schedulers.io()
 ): Observable<Query> {
   val query =
-    object : Query() {
+    object : Query {
       override fun run(): Cursor? {
         return query(uri, projection, selection, selectionArgs, sortOrder)
       }
@@ -92,7 +92,7 @@ fun ContentResolver.observeQuery(
 private val mainThread = Handler(Looper.getMainLooper())
 
 /** An executable query. */
-abstract class Query {
+interface Query {
   /**
    * Execute the query on the underlying database and return the resulting cursor.
    *
@@ -104,124 +104,119 @@ abstract class Query {
    */
   @CheckResult
   @WorkerThread
-  abstract fun run(): Cursor?
+  fun run(): Cursor?
+}
 
-  /**
-   * Execute the query on the underlying database and return an Observable of each row mapped to
-   * `T` by `mapper`.
-   *
-   * Standard usage of this operation is in `flatMap`:
-   * ```
-   * flatMap(q -> q.asRows(Item.MAPPER).toList())
-   * ```
-   *
-   * However, the above is a more-verbose but identical operation as
-   * [Query.mapToList]. This `asRows` method should be used when you need
-   * to limit or filter the items separate from the actual query.
-   * ```flatMap(q -> q.asRows(Item.MAPPER).take(5).toList())
-   * // or...
-   * flatMap(q -> q.asRows(Item.MAPPER).filter(i -> i.isActive).toList())
-   * ```
-   *
-   * Note: Limiting results or filtering will almost always be faster in the database as part of
-   * a query and should be preferred, where possible.
-   *
-   * The resulting observable will be empty if `null` is returned from [run].
-   */
-  @CheckResult
-  fun <T : Any> asRows(mapper: (Cursor) -> T): Observable<T> {
-    return Observable.create { e ->
-      run()?.use { cursor ->
-        while (cursor.moveToNext() && !e.isDisposed) {
-          e.onNext(mapper(cursor))
-        }
-      }
-      if (!e.isDisposed) {
-        e.onComplete()
+/**
+ * Execute the query on the underlying database and return an Observable of each row mapped to
+ * `T` by `mapper`.
+ *
+ * Standard usage of this operation is in `flatMap`:
+ * ```
+ * flatMap(q -> q.asRows(Item.MAPPER).toList())
+ * ```
+ *
+ * However, the above is a more-verbose but identical operation as
+ * [mapToList]. This `asRows` method should be used when you need
+ * to limit or filter the items separate from the actual query.
+ * ```flatMap(q -> q.asRows(Item.MAPPER).take(5).toList())
+ * // or...
+ * flatMap(q -> q.asRows(Item.MAPPER).filter(i -> i.isActive).toList())
+ * ```
+ *
+ * Note: Limiting results or filtering will almost always be faster in the database as part of
+ * a query and should be preferred, where possible.
+ *
+ * The resulting observable will be empty if `null` is returned from [run].
+ */
+@CheckResult
+fun <T : Any> Query.asRows(mapper: (Cursor) -> T): Observable<T> {
+  return Observable.create { e ->
+    run()?.use { cursor ->
+      while (cursor.moveToNext() && !e.isDisposed) {
+        e.onNext(mapper(cursor))
       }
     }
-  }
-
-  companion object {
-    /**
-     * Transforms a query observable returning a single row to a `T` using [mapper].
-     *
-     * It is an error for a query to pass through this operator with more than 1 row in its result
-     * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
-     * do not emit an item.
-     *
-     * This operator ignores `null` cursors returned from [run].
-     *
-     * @param mapper Maps the current [Cursor] row to `T`. May not return null.
-     */
-    @JvmStatic
-    @CheckResult
-    fun <T : Any> Observable<Query>.mapToOne(
-      mapper: (Cursor) -> T
-    ): Observable<T> {
-      return QueryToOneObservable(this, mapper, null)
-    }
-
-    /**
-     * Transforms a query observable returning a single row to a `T` using [mapper].
-     *
-     * It is an error for a query to pass through this operator with more than 1 row in its result
-     * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
-     * emit `defaultValue`.
-     *
-     * This operator emits `defaultValue` if `null` is returned from [run].
-     *
-     * @param mapper Maps the current [Cursor] row to `T`. May not return null.
-     * @param default Value returned if result set is empty
-     */
-    @JvmStatic
-    @CheckResult
-    fun <T : Any> Observable<Query>.mapToOneOrDefault(
-      default: T,
-      mapper: (Cursor) -> T
-    ): Observable<T> {
-      return QueryToOneObservable(this, mapper, default)
-    }
-
-    /**
-     * Creates an [operator][ObservableOperator] which transforms a query returning a
-     * single row to a `Optional<T>` using `mapper`. Use with [Observable.lift].
-     *
-     * It is an error for a query to pass through this operator with more than 1 row in its result
-     * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
-     * emit [Optional.empty()][Optional.empty].
-     *
-     * This operator ignores `null` cursors returned from [run].
-     *
-     * @param mapper Maps the current [Cursor] row to `T`. May not return null.
-     */
-    @JvmStatic
-    @RequiresApi(24)
-    @CheckResult
-    fun <T : Any> Observable<Query>.mapToOptional(
-      mapper: (Cursor) -> T
-    ): Observable<Optional<T>> {
-      return QueryToOptionalObservable(this, mapper)
-    }
-
-    /**
-     * Creates an [operator][ObservableOperator] which transforms a query to a
-     * `List<T>` using `mapper`. Use with [Observable.lift].
-     *
-     * Be careful using this operator as it will always consume the entire cursor and create objects
-     * for each row, every time this observable emits a new query. On tables whose queries update
-     * frequently or very large result sets this can result in the creation of many objects.
-     *
-     * This operator ignores `null` cursors returned from [run].
-     *
-     * @param mapper Maps the current [Cursor] row to `T`. May not return null.
-     */
-    @JvmStatic
-    @CheckResult
-    fun <T : Any> Observable<Query>.mapToList(
-      mapper: (Cursor) -> T
-    ): Observable<List<T>> {
-      return QueryToListObservable(this, mapper)
+    if (!e.isDisposed) {
+      e.onComplete()
     }
   }
+}
+
+
+/**
+ * Transforms a query observable returning a single row to a `T` using [mapper].
+ *
+ * It is an error for a query to pass through this operator with more than 1 row in its result
+ * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+ * do not emit an item.
+ *
+ * This operator ignores `null` cursors returned from [run].
+ *
+ * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+ */
+@CheckResult
+fun <T : Any> Observable<Query>.mapToOne(
+  mapper: (Cursor) -> T
+): Observable<T> {
+  return QueryToOneObservable(this, mapper, null)
+}
+
+/**
+ * Transforms a query observable returning a single row to a `T` using [mapper].
+ *
+ * It is an error for a query to pass through this operator with more than 1 row in its result
+ * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+ * emit `defaultValue`.
+ *
+ * This operator emits `defaultValue` if `null` is returned from [run].
+ *
+ * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+ * @param default Value returned if result set is empty
+ */
+@CheckResult
+fun <T : Any> Observable<Query>.mapToOneOrDefault(
+  default: T,
+  mapper: (Cursor) -> T
+): Observable<T> {
+  return QueryToOneObservable(this, mapper, default)
+}
+
+/**
+ * Creates an [operator][ObservableOperator] which transforms a query returning a
+ * single row to a `Optional<T>` using `mapper`. Use with [Observable.lift].
+ *
+ * It is an error for a query to pass through this operator with more than 1 row in its result
+ * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+ * emit [Optional.empty()][Optional.empty].
+ *
+ * This operator ignores `null` cursors returned from [run].
+ *
+ * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+ */
+@RequiresApi(24)
+@CheckResult
+fun <T : Any> Observable<Query>.mapToOptional(
+  mapper: (Cursor) -> T
+): Observable<Optional<T>> {
+  return QueryToOptionalObservable(this, mapper)
+}
+
+/**
+ * Creates an [operator][ObservableOperator] which transforms a query to a
+ * `List<T>` using `mapper`. Use with [Observable.lift].
+ *
+ * Be careful using this operator as it will always consume the entire cursor and create objects
+ * for each row, every time this observable emits a new query. On tables whose queries update
+ * frequently or very large result sets this can result in the creation of many objects.
+ *
+ * This operator ignores `null` cursors returned from [run].
+ *
+ * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+ */
+@CheckResult
+fun <T : Any> Observable<Query>.mapToList(
+  mapper: (Cursor) -> T
+): Observable<List<T>> {
+  return QueryToListObservable(this, mapper)
 }

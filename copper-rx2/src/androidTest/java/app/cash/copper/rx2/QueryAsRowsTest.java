@@ -2,7 +2,6 @@ package app.cash.copper.rx2;
 
 import android.database.Cursor;
 import android.database.MatrixCursor;
-import androidx.annotation.Nullable;
 import androidx.test.runner.AndroidJUnit4;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,7 +21,7 @@ public final class QueryAsRowsTest {
   @Test public void asRowsEmpty() {
     MatrixCursor cursor = new MatrixCursor(COLUMN_NAMES);
     Query query = new CursorQuery(cursor);
-    List<Name> names = query.asRows(Name.MAP).toList().blockingGet();
+    List<Name> names = RxContentResolver.asRows(query, Name.MAP).toList().blockingGet();
     assertThat(names).isEmpty();
   }
 
@@ -32,7 +31,7 @@ public final class QueryAsRowsTest {
     cursor.addRow(new Object[] { "Bob", "Bobberson" });
 
     Query query = new CursorQuery(cursor);
-    List<Name> names = query.asRows(Name.MAP).toList().blockingGet();
+    List<Name> names = RxContentResolver.asRows(query, Name.MAP).toList().blockingGet();
     assertThat(names).containsExactly(new Name("Alice", "Allison"), new Name("Bob", "Bobberson"));
   }
 
@@ -43,7 +42,7 @@ public final class QueryAsRowsTest {
 
     Query query = new CursorQuery(cursor);
     final AtomicInteger count = new AtomicInteger();
-    query.asRows(c -> {
+    RxContentResolver.asRows(query, c -> {
       count.incrementAndGet();
       return Name.MAP.invoke(c);
     }).take(1).blockingFirst();
@@ -51,14 +50,10 @@ public final class QueryAsRowsTest {
   }
 
   @Test public void asRowsEmptyWhenNullCursor() {
-    Query nully = new Query() {
-      @Nullable @Override public Cursor run() {
-        return null;
-      }
-    };
+    Query nully = () -> null;
 
     final AtomicInteger count = new AtomicInteger();
-    nully.asRows(cursor -> {
+    RxContentResolver.asRows(nully, cursor -> {
       count.incrementAndGet();
       return Name.MAP.invoke(cursor);
     }).test().assertNoValues().assertComplete();
@@ -95,7 +90,7 @@ public final class QueryAsRowsTest {
     }
   }
 
-  static final class CursorQuery extends Query {
+  static final class CursorQuery implements Query {
     private final Cursor cursor;
 
     CursorQuery(Cursor cursor) {
