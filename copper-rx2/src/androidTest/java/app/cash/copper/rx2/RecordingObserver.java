@@ -17,6 +17,7 @@ package app.cash.copper.rx2;
 
 import android.database.Cursor;
 import android.util.Log;
+import app.cash.copper.Query;
 import io.reactivex.observers.DisposableObserver;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;

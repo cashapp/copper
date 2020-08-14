@@ -1,3 +1,4 @@
-rootProject.name = 'copper'
+rootProject.name = 'copper-root'
 
+include ':copper'
 include ':copper-rx2'

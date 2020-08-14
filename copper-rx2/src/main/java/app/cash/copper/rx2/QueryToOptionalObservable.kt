@@ -17,6 +17,7 @@ package app.cash.copper.rx2
 
 import android.database.Cursor
 import androidx.annotation.RequiresApi
+import app.cash.copper.Query
 import io.reactivex.Observable
 import io.reactivex.Observer
 import io.reactivex.exceptions.Exceptions
