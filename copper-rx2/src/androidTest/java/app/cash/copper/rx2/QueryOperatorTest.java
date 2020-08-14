@@ -19,6 +19,7 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import androidx.test.filters.SdkSuppress;
 import app.cash.copper.Query;
+import app.cash.copper.testing.Employee;
 import app.cash.copper.testing.NullQuery;
 import io.reactivex.Observable;
 import io.reactivex.observers.TestObserver;
@@ -70,7 +71,8 @@ public final class QueryOperatorTest {
 
   @Test public void mapToOneOrDefault() {
     Employee employees = employeesQuery("alice", "Alice Allison")
-        .to(o -> RxContentResolver.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"), MAPPER))
+        .to(o -> RxContentResolver.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"),
+          MAPPER))
         .blockingFirst();
     assertThat(employees).isEqualTo(new Employee("alice", "Alice Allison"));
   }
@@ -86,7 +88,8 @@ public final class QueryOperatorTest {
   @Test public void mapToOneOrDefaultThrowsOnMultipleRows() {
     Observable<Employee> employees =
         employeesQuery("alice", "Alice Allison", "bob", "Bob Bobberson")
-            .to(o -> RxContentResolver.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"), MAPPER));
+            .to(o -> RxContentResolver.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"),
+              MAPPER));
     try {
       employees.blockingFirst();
       fail();
