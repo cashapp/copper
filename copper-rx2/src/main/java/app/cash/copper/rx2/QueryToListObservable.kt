@@ -23,7 +23,7 @@ import io.reactivex.observers.DisposableObserver
 import io.reactivex.plugins.RxJavaPlugins
 import java.util.ArrayList
 
-internal class QueryToListObservable<T>(
+internal class QueryToListObservable<T : Any>(
   private val upstream: Observable<Query>,
   private val mapper: (Cursor) -> T
 ) : Observable<List<T>>() {
@@ -31,7 +31,7 @@ internal class QueryToListObservable<T>(
     upstream.subscribe(MappingObserver(observer, mapper))
   }
 
-  private class MappingObserver<T>(
+  private class MappingObserver<T : Any>(
     private val downstream: Observer<in List<T>>,
     private val mapper: (Cursor) -> T
   ) : DisposableObserver<Query>() {
