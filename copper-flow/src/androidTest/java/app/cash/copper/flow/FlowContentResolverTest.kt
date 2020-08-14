@@ -17,12 +17,11 @@ package app.cash.copper.flow
 
 import android.content.ContentResolver
 import android.test.ProviderTestCase2
-import app.cash.copper.Query
-import app.cash.copper.testing.CursorAssert
 import app.cash.copper.testing.TestContentProvider
 import app.cash.copper.testing.TestContentProvider.AUTHORITY
 import app.cash.copper.testing.TestContentProvider.TABLE
 import app.cash.copper.testing.TestContentProvider.testValues
+import app.cash.copper.testing.assert
 import app.cash.turbine.test
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -93,8 +92,4 @@ class FlowContentResolverTest : ProviderTestCase2<TestContentProvider>(
       cancel()
     }
   }
-}
-
-private fun Query.assert(body: CursorAssert.() -> Unit) {
-  CursorAssert(run()).apply(body).isExhausted()
 }
