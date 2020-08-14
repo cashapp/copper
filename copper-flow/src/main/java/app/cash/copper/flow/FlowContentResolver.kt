@@ -26,10 +26,15 @@ import android.os.Looper
 import androidx.annotation.CheckResult
 import app.cash.copper.ContentResolverQuery
 import app.cash.copper.Query
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.withContext
+import java.util.ArrayList
 
 /**
  * Create an observable which will notify subscribers with a [query][Query] for
@@ -81,3 +86,135 @@ fun ContentResolver.observeQuery(
 }
 
 private val mainThread = Handler(Looper.getMainLooper())
+
+/**
+ * Transforms a query flow returning a single row to a `T` using [mapper].
+ *
+ * It is an error for a query to pass through this operator with more than 1 row in its result
+ * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+ * do not emit an item.
+ *
+ * This operator ignores `null` cursors returned from [Query.run].
+ *
+ * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+ */
+@CheckResult
+fun <T : Any> Flow<Query>.mapToOne(
+  dispatcher: CoroutineDispatcher = Dispatchers.IO,
+  mapper: (Cursor) -> T
+): Flow<T> = transform { query ->
+  val item = withContext(dispatcher) {
+    query.run()?.use { cursor ->
+      if (cursor.moveToNext()) {
+        val item = mapper(cursor)
+        check(!cursor.moveToNext()) { "Cursor returned more than 1 row" }
+        item
+      } else {
+        null
+      }
+    }
+  }
+  if (item != null) {
+    emit(item)
+  }
+}
+
+/**
+ * Transforms a query flow returning a single row to a `T` using [mapper].
+ *
+ * It is an error for a query to pass through this operator with more than 1 row in its result
+ * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+ * emit `defaultValue`.
+ *
+ * This operator emits [default] if `null` is returned from [Query.run].
+ *
+ * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+ * @param default Value returned if result set is empty
+ */
+@CheckResult
+fun <T : Any> Flow<Query>.mapToOneOrDefault(
+  default: T,
+  dispatcher: CoroutineDispatcher = Dispatchers.IO,
+  mapper: (Cursor) -> T
+): Flow<T> = transform { query ->
+  val item = withContext(dispatcher) {
+    query.run()?.use { cursor ->
+      if (cursor.moveToNext()) {
+        val item = mapper(cursor)
+        check(!cursor.moveToNext()) { "Cursor returned more than 1 row" }
+        item
+      } else {
+        null
+      }
+    }
+  }
+  emit(item ?: default)
+}
+
+/**
+ * Transforms a query flow returning a single row to a `T?` using `mapper`.
+ *
+ * It is an error for a query to pass through this operator with more than 1 row in its result
+ * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
+ * emit null.
+ *
+ * This operator ignores `null` cursors returned from [Query.run].
+ *
+ * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+ */
+@CheckResult
+fun <T : Any> Flow<Query>.mapToNullable(
+  dispatcher: CoroutineDispatcher = Dispatchers.IO,
+  mapper: (Cursor) -> T
+): Flow<T?> = transform { query ->
+  val (emit, item) = withContext(dispatcher) {
+    val cursor = query.run()
+    if (cursor == null) {
+      false to null
+    } else {
+      cursor.use {
+        val item = if (cursor.moveToNext()) {
+          val item = mapper(cursor)
+          check(!cursor.moveToNext()) { "Cursor returned more than 1 row" }
+          item
+        } else {
+          null
+        }
+        true to item
+      }
+    }
+  }
+  if (emit) {
+    emit(item)
+  }
+}
+
+/**
+ * Transforms a query flow to a `List<T>` using `mapper`.
+ *
+ * Be careful using this operator as it will always consume the entire cursor and create objects
+ * for each row, every time this observable emits a new query. On tables whose queries update
+ * frequently or very large result sets this can result in the creation of many objects.
+ *
+ * This operator ignores `null` cursors returned from [Query.run].
+ *
+ * @param mapper Maps the current [Cursor] row to `T`. May not return null.
+ */
+@CheckResult
+fun <T : Any> Flow<Query>.mapToList(
+  dispatcher: CoroutineDispatcher = Dispatchers.IO,
+  mapper: (Cursor) -> T
+): Flow<List<T>> = transform { query ->
+  val list = withContext(dispatcher) {
+    query.run()?.use { cursor ->
+      val items = ArrayList<T>(cursor.count)
+      while (cursor.moveToNext()) {
+        items.add(mapper(cursor))
+      }
+      items
+    }
+  }
+  if (list != null) {
+    emit(list)
+  }
+}

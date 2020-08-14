@@ -38,4 +38,13 @@ subprojects {
     google()
     jcenter()
   }
+
+  tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinCompile).configureEach { task ->
+    task.kotlinOptions {
+      freeCompilerArgs += [
+        '-progressive',
+        '-XXLanguage:+NewInference',
+      ]
+    }
+  }
 }
