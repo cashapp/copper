@@ -15,6 +15,13 @@ public final class TestContentProvider extends MockContentProvider {
   public static final String KEY = "test_key";
   public static final String VALUE = "test_value";
 
+  public static ContentValues testValues(String key, String value) {
+    ContentValues result = new ContentValues();
+    result.put(KEY, key);
+    result.put(VALUE, value);
+    return result;
+  }
+
   private final Map<String, String> storage = new LinkedHashMap<>();
 
   private ContentResolver contentResolver;

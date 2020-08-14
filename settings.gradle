@@ -1,5 +1,6 @@
 rootProject.name = 'copper-root'
 
 include ':copper'
+include ':copper-flow'
 include ':copper-rx2'
 include ':copper-testing'

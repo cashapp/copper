@@ -16,14 +16,12 @@
 package app.cash.copper.rx2;
 
 import android.content.ContentResolver;
-import android.content.ContentValues;
 import android.test.ProviderTestCase2;
 import app.cash.copper.testing.TestContentProvider;
 
 import static app.cash.copper.testing.TestContentProvider.AUTHORITY;
-import static app.cash.copper.testing.TestContentProvider.KEY;
 import static app.cash.copper.testing.TestContentProvider.TABLE;
-import static app.cash.copper.testing.TestContentProvider.VALUE;
+import static app.cash.copper.testing.TestContentProvider.testValues;
 
 public final class RxContentResolverTest extends ProviderTestCase2<TestContentProvider> {
   private final RecordingObserver o = new BlockingRecordingObserver();
@@ -52,23 +50,23 @@ public final class RxContentResolverTest extends ProviderTestCase2<TestContentPr
       .subscribe(o);
     o.assertCursor().isExhausted();
 
-    contentResolver.insert(TABLE, values("key1", "val1"));
+    contentResolver.insert(TABLE, testValues("key1", "val1"));
     o.assertCursor().hasRow("key1", "val1").isExhausted();
   }
 
   public void testCreateQueryObservesUpdate() {
-    contentResolver.insert(TABLE, values("key1", "val1"));
+    contentResolver.insert(TABLE, testValues("key1", "val1"));
 
     RxContentResolver.observeQuery(contentResolver, TABLE, null, null, null, null, false, scheduler)
       .subscribe(o);
     o.assertCursor().hasRow("key1", "val1").isExhausted();
 
-    contentResolver.update(TABLE, values("key1", "val2"), null, null);
+    contentResolver.update(TABLE, testValues("key1", "val2"), null, null);
     o.assertCursor().hasRow("key1", "val2").isExhausted();
   }
 
   public void testCreateQueryObservesDelete() {
-    contentResolver.insert(TABLE, values("key1", "val1"));
+    contentResolver.insert(TABLE, testValues("key1", "val1"));
 
     RxContentResolver.observeQuery(contentResolver, TABLE, null, null, null, null, false, scheduler)
       .subscribe(o);
@@ -87,16 +85,9 @@ public final class RxContentResolverTest extends ProviderTestCase2<TestContentPr
     scheduler.triggerActions();
     o.assertCursor().isExhausted();
 
-    contentResolver.insert(TABLE, values("key1", "val1"));
+    contentResolver.insert(TABLE, testValues("key1", "val1"));
     o.assertNoMoreEvents();
     scheduler.triggerActions();
     o.assertCursor().hasRow("key1", "val1").isExhausted();
-  }
-
-  private ContentValues values(String key, String value) {
-    ContentValues result = new ContentValues();
-    result.put(KEY, key);
-    result.put(VALUE, value);
-    return result;
   }
 }
