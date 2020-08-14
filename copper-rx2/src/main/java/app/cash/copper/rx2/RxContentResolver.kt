@@ -66,12 +66,10 @@ fun ContentResolver.observeQuery(
   notifyForDescendants: Boolean = false,
   scheduler: Scheduler = Schedulers.io()
 ): Observable<Query> {
-  val query = ContentResolverQuery(
-    this, uri, projection, selection, selectionArgs, sortOrder
-  )
+  val query = ContentResolverQuery(this, uri, projection, selection, selectionArgs, sortOrder)
   val queries =
     Observable.create<Query> { e ->
-      val observer: ContentObserver = object : ContentObserver(mainThread) {
+      val observer = object : ContentObserver(mainThread) {
         override fun onChange(selfChange: Boolean) {
           if (!e.isDisposed) {
             e.onNext(query)
