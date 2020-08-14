@@ -25,7 +25,8 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.CheckResult
 import androidx.annotation.RequiresApi
-import androidx.annotation.WorkerThread
+import app.cash.copper.ContentResolverQuery
+import app.cash.copper.Query
 import io.reactivex.Observable
 import io.reactivex.ObservableOperator
 import io.reactivex.Scheduler
@@ -65,12 +66,9 @@ fun ContentResolver.observeQuery(
   notifyForDescendants: Boolean = false,
   scheduler: Scheduler = Schedulers.io()
 ): Observable<Query> {
-  val query =
-    object : Query {
-      override fun run(): Cursor? {
-        return query(uri, projection, selection, selectionArgs, sortOrder)
-      }
-    }
+  val query = ContentResolverQuery(
+    this, uri, projection, selection, selectionArgs, sortOrder
+  )
   val queries =
     Observable.create<Query> { e ->
       val observer: ContentObserver = object : ContentObserver(mainThread) {
@@ -90,22 +88,6 @@ fun ContentResolver.observeQuery(
 }
 
 private val mainThread = Handler(Looper.getMainLooper())
-
-/** An executable query. */
-interface Query {
-  /**
-   * Execute the query on the underlying database and return the resulting cursor.
-   *
-   * @return A [Cursor] with query results, or `null` when the query could not be
-   * executed due to a problem with the underlying store. Unfortunately it is not well documented
-   * when `null` is returned. It usually involves a problem in communicating with the
-   * underlying store and should either be treated as failure or ignored for retry at a later
-   * time.
-   */
-  @CheckResult
-  @WorkerThread
-  fun run(): Cursor?
-}
 
 /**
  * Execute the query on the underlying database and return an Observable of each row mapped to

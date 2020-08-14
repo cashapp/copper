@@ -3,6 +3,7 @@ package app.cash.copper.rx2;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import androidx.test.runner.AndroidJUnit4;
+import app.cash.copper.Query;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import kotlin.jvm.functions.Function1;
