@@ -25,7 +25,7 @@ import io.reactivex.plugins.RxJavaPlugins
 import java.util.Optional
 
 @RequiresApi(24)
-internal class QueryToOptionalObservable<T>(
+internal class QueryToOptionalObservable<T : Any>(
   private val upstream: Observable<Query>,
   private val mapper: (Cursor) -> T
 ) : Observable<Optional<T>>() {
@@ -33,7 +33,7 @@ internal class QueryToOptionalObservable<T>(
     upstream.subscribe(MappingObserver(observer, mapper))
   }
 
-  private class MappingObserver<T>(
+  private class MappingObserver<T : Any>(
     private val downstream: Observer<in Optional<T>>,
     private val mapper: (Cursor) -> T
   ) : DisposableObserver<Query>() {

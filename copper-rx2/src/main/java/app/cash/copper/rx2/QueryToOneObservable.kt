@@ -22,7 +22,7 @@ import io.reactivex.exceptions.Exceptions
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.plugins.RxJavaPlugins
 
-internal class QueryToOneObservable<T>(
+internal class QueryToOneObservable<T : Any>(
   private val upstream: Observable<Query>,
   private val mapper: (Cursor) -> T,
   /** A null `defaultValue` means nothing will be emitted when empty. */
@@ -32,7 +32,7 @@ internal class QueryToOneObservable<T>(
     upstream.subscribe(MappingObserver(observer, mapper, defaultValue))
   }
 
-  private class MappingObserver<T>(
+  private class MappingObserver<T : Any>(
     private val downstream: Observer<in T>,
     private val mapper: (Cursor) -> T,
     private val defaultValue: T?
