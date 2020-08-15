@@ -19,24 +19,21 @@ import android.database.Cursor;
 import androidx.test.filters.SdkSuppress;
 import app.cash.copper.testing.Employee;
 import app.cash.copper.testing.NullQuery;
-import io.reactivex.Observable;
-import io.reactivex.observers.TestObserver;
-import java.util.List;
 import java.util.Optional;
 import kotlin.jvm.functions.Function1;
 import org.junit.Test;
 
 import static app.cash.copper.testing.Employee.queryOf;
-import static com.google.common.truth.Truth.assertThat;
 import static io.reactivex.Observable.just;
-import static org.junit.Assert.fail;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 
 public final class QueryOperatorTest {
   @Test public void mapToOne() {
-    Employee employees = just(queryOf("alice", "Alice Allison"))
+    just(queryOf("alice", "Alice Allison"))
         .to(o -> RxContentResolver.mapToOne(o, Employee.MAPPER))
-        .blockingFirst();
-    assertThat(employees).isEqualTo(new Employee("alice", "Alice Allison"));
+        .test()
+        .assertValue(new Employee("alice", "Alice Allison"));
   }
 
   @Test public void mapToOneThrowsWhenMapperReturnsNull() {
@@ -47,85 +44,71 @@ public final class QueryOperatorTest {
         .assertErrorMessage("QueryToOne mapper returned null");
   }
 
+  @Test public void mapToOneWithDefault() {
+    just(queryOf("alice", "Alice Allison"))
+        .to(o -> RxContentResolver.mapToOne(o, new Employee("fred", "Fred Frederson"), Employee.MAPPER))
+        .test()
+        .assertValue(new Employee("alice", "Alice Allison"));
+  }
+
   @Test public void mapToOneThrowsOnMultipleRows() {
-    Observable<Employee> employees =
-        just(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
-            .to(o -> RxContentResolver.mapToOne(o, Employee.MAPPER));
-    try {
-      employees.blockingFirst();
-      fail();
-    } catch (IllegalStateException e) {
-      assertThat(e).hasMessageThat().isEqualTo("Cursor returned more than 1 row");
-    }
+    just(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
+        .to(o -> RxContentResolver.mapToOne(o, Employee.MAPPER))
+        .test()
+        .assertError(IllegalStateException.class)
+        .assertErrorMessage("Cursor returned more than 1 row");
+  }
+
+  @Test public void mapToOneEmptyIgnoredWithoutDefault() {
+    just(queryOf())
+        .to(o -> RxContentResolver.mapToOne(o, Employee.MAPPER))
+        .test()
+        .assertNoValues()
+        .assertComplete();
+  }
+
+  @Test public void mapToOneWithDefaultEmpty() {
+    Employee defaultValue = new Employee("fred", "Fred Frederson");
+    just(queryOf())
+        .to(o -> RxContentResolver.mapToOne(o, defaultValue, Employee.MAPPER))
+        .test()
+        .assertValue(defaultValue)
+        .assertComplete();
   }
 
   @Test public void mapToOneIgnoresNullCursor() {
-    TestObserver<Employee> observer = new TestObserver<>();
     just(NullQuery.INSTANCE)
         .to(o -> RxContentResolver.mapToOne(o, Employee.MAPPER))
-        .subscribe(observer);
-
-    observer.assertNoValues();
-    observer.assertComplete();
-  }
-
-  @Test public void mapToOneOrDefault() {
-    Employee employees = just(queryOf("alice", "Alice Allison"))
-        .to(o -> RxContentResolver.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"),
-          Employee.MAPPER))
-        .blockingFirst();
-    assertThat(employees).isEqualTo(new Employee("alice", "Alice Allison"));
-  }
-
-  @Test public void mapToOneOrDefaultThrowsWhenMapperReturnsNull() {
-    just(queryOf("alice", "Alice Allison"))
-        .to(o -> RxContentResolver.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"), c -> null))
         .test()
-        .assertError(NullPointerException.class)
-        .assertErrorMessage("QueryToOne mapper returned null");
+        .assertNoValues()
+        .assertComplete();
   }
 
-  @Test public void mapToOneOrDefaultThrowsOnMultipleRows() {
-    Observable<Employee> employees =
-        just(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
-            .to(o -> RxContentResolver.mapToOneOrDefault(o, new Employee("fred", "Fred Frederson"),
-              Employee.MAPPER));
-    try {
-      employees.blockingFirst();
-      fail();
-    } catch (IllegalStateException e) {
-      assertThat(e).hasMessageThat().isEqualTo("Cursor returned more than 1 row");
-    }
-  }
-
-  @Test public void mapToOneOrDefaultReturnsDefaultWhenNullCursor() {
-    Employee defaultEmployee = new Employee("bob", "Bob Bobberson");
-
-    TestObserver<Employee> observer = new TestObserver<>();
+  @Test public void mapToOneWithDefaultIgnoresNullCursor() {
     just(NullQuery.INSTANCE)
-        .to(o -> RxContentResolver.mapToOneOrDefault(o, defaultEmployee, Employee.MAPPER))
-        .subscribe(observer);
-
-    observer.assertValues(defaultEmployee);
-    observer.assertComplete();
+        .to(o -> RxContentResolver.mapToOne(o, new Employee("fred", "Fred Frederson"), Employee.MAPPER))
+        .test()
+        .assertNoValues()
+        .assertComplete();
   }
 
   @Test public void mapToList() {
-    List<Employee> employees =
-        just(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson"))
-            .to(o -> RxContentResolver.mapToList(o, Employee.MAPPER))
-            .blockingFirst();
-    assertThat(employees).containsExactly( //
-        new Employee("alice", "Alice Allison"), //
-        new Employee("bob", "Bob Bobberson"), //
-        new Employee("eve", "Eve Evenson"));
+    just(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson"))
+        .to(o -> RxContentResolver.mapToList(o, Employee.MAPPER))
+        .test()
+        .assertValue(asList(
+            new Employee("alice", "Alice Allison"), //
+            new Employee("bob", "Bob Bobberson"), //
+            new Employee("eve", "Eve Evenson")))
+        .assertComplete();
   }
 
   @Test public void mapToListEmptyWhenNoRows() {
-    List<Employee> employees = just(queryOf())
+    just(queryOf())
         .to(o -> RxContentResolver.mapToList(o, Employee.MAPPER))
-        .blockingFirst();
-    assertThat(employees).isEmpty();
+        .test()
+        .assertValue(emptyList())
+        .assertComplete();
   }
 
   @Test public void mapToListReturnsNullOnMapperNull() {
@@ -136,25 +119,22 @@ public final class QueryOperatorTest {
         return count++ == 2 ? null : Employee.MAPPER.invoke(cursor);
       }
     };
-    List<Employee> employees =
-        just(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson"))
-            .to(o -> RxContentResolver.mapToList(o, mapToNull)) //
-            .blockingFirst();
-
-    assertThat(employees).containsExactly(
-        new Employee("alice", "Alice Allison"),
-        new Employee("bob", "Bob Bobberson"),
-        null);
+    just(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson"))
+        .to(o -> RxContentResolver.mapToList(o, mapToNull)) //
+        .test()
+        .assertValue(asList(
+            new Employee("alice", "Alice Allison"),
+            new Employee("bob", "Bob Bobberson"),
+            null))
+        .assertComplete();
   }
 
   @Test public void mapToListIgnoresNullCursor() {
-    TestObserver<List<Employee>> subscriber = new TestObserver<>();
     just(NullQuery.INSTANCE)
         .to(o -> RxContentResolver.mapToList(o, Employee.MAPPER))
-        .subscribe(subscriber);
-
-    subscriber.assertNoValues();
-    subscriber.assertComplete();
+        .test()
+        .assertNoValues()
+        .assertComplete();
   }
 
   @SdkSuppress(minSdkVersion = 24)

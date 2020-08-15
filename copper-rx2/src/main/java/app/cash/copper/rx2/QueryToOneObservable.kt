@@ -44,24 +44,21 @@ internal class QueryToOneObservable<T : Any>(
 
     override fun onNext(query: Query) {
       try {
-        var item: T? = null
-        query.run()?.use { cursor ->
+        val item = query.run()?.use { cursor ->
           if (cursor.moveToNext()) {
-            item = mapper(cursor)
+            val item = mapper(cursor)
             if (item == null) {
               downstream.onError(NullPointerException("QueryToOne mapper returned null"))
               return
             }
             check(!cursor.moveToNext()) { "Cursor returned more than 1 row" }
+            item
+          } else {
+            defaultValue
           }
         }
-        if (!isDisposed) {
-          if (item != null) {
-            // TODO remove double-bang once on Kotlin 1.4 where 'use' has a contract.
-            downstream.onNext(item!!)
-          } else if (defaultValue != null) {
-            downstream.onNext(defaultValue)
-          }
+        if (item != null && !isDisposed) {
+          downstream.onNext(item)
         }
       } catch (e: Throwable) {
         Exceptions.throwIfFatal(e)

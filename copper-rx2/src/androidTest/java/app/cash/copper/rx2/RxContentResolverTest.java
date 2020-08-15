@@ -40,7 +40,8 @@ public final class RxContentResolverTest extends ProviderTestCase2<TestContentPr
     getProvider().init(getContext().getContentResolver());
   }
 
-  @Override public void tearDown() {
+  @Override public void tearDown() throws Exception {
+    super.tearDown();
     o.assertNoMoreEvents();
     o.dispose();
   }
