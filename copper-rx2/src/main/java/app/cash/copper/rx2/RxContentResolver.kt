@@ -56,6 +56,7 @@ import java.util.Optional
  * @see ContentResolver.registerContentObserver
  */
 @CheckResult
+@JvmOverloads
 fun ContentResolver.observeQuery(
   uri: Uri,
   projection: Array<String>? = null,
