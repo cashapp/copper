@@ -19,6 +19,7 @@ import android.database.Cursor
 import androidx.annotation.RequiresApi
 import app.cash.copper.Query
 import io.reactivex.Observable
+import io.reactivex.ObservableSource
 import io.reactivex.Observer
 import io.reactivex.exceptions.Exceptions
 import io.reactivex.observers.DisposableObserver
@@ -27,7 +28,7 @@ import java.util.Optional
 
 @RequiresApi(24)
 internal class QueryToOptionalObservable<T : Any>(
-  private val upstream: Observable<out Query>,
+  private val upstream: ObservableSource<out Query>,
   private val mapper: (Cursor) -> T
 ) : Observable<Optional<T>>() {
   override fun subscribeActual(observer: Observer<in Optional<T>>) {

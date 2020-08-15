@@ -28,6 +28,7 @@ import androidx.annotation.RequiresApi
 import app.cash.copper.ContentResolverQuery
 import app.cash.copper.Query
 import io.reactivex.Observable
+import io.reactivex.ObservableSource
 import io.reactivex.Scheduler
 import io.reactivex.schedulers.Schedulers
 import java.util.Optional
@@ -136,7 +137,7 @@ fun <T : Any> Query.asRows(mapper: (Cursor) -> T): Observable<T> {
  */
 @CheckResult
 @JvmOverloads
-fun <T : Any> Observable<out Query>.mapToOne(
+fun <T : Any> ObservableSource<out Query>.mapToOne(
   default: T? = null,
   mapper: (Cursor) -> T
 ): Observable<T> {
@@ -156,7 +157,7 @@ fun <T : Any> Observable<out Query>.mapToOne(
  */
 @RequiresApi(24)
 @CheckResult
-fun <T : Any> Observable<out Query>.mapToOptional(
+fun <T : Any> ObservableSource<out Query>.mapToOptional(
   mapper: (Cursor) -> T
 ): Observable<Optional<T>> {
   return QueryToOptionalObservable(this, mapper)
@@ -174,7 +175,7 @@ fun <T : Any> Observable<out Query>.mapToOptional(
  * @param mapper Maps the current [Cursor] row to `T`. May not return null.
  */
 @CheckResult
-fun <T : Any> Observable<out Query>.mapToList(
+fun <T : Any> ObservableSource<out Query>.mapToList(
   mapper: (Cursor) -> T
 ): Observable<List<T>> {
   return QueryToListObservable(this, mapper)

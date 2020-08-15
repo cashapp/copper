@@ -18,6 +18,7 @@ package app.cash.copper.rx3
 import android.database.Cursor
 import app.cash.copper.Query
 import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.ObservableSource
 import io.reactivex.rxjava3.core.Observer
 import io.reactivex.rxjava3.exceptions.Exceptions
 import io.reactivex.rxjava3.observers.DisposableObserver
@@ -25,7 +26,7 @@ import io.reactivex.rxjava3.plugins.RxJavaPlugins
 import java.util.ArrayList
 
 internal class QueryToListObservable<T : Any>(
-  private val upstream: Observable<out Query>,
+  private val upstream: ObservableSource<out Query>,
   private val mapper: (Cursor) -> T
 ) : Observable<List<T>>() {
   override fun subscribeActual(observer: Observer<in List<T>>) {
