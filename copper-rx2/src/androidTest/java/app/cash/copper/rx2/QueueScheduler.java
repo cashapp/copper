@@ -18,20 +18,16 @@ package app.cash.copper.rx2;
 import io.reactivex.Scheduler;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.disposables.Disposables;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
-final class TestScheduler extends Scheduler {
-  private final io.reactivex.schedulers.TestScheduler delegate =
-      new io.reactivex.schedulers.TestScheduler();
+final class QueueScheduler extends Scheduler {
+  private final BlockingDeque<Runnable> events = new LinkedBlockingDeque<>();
 
-  private boolean runTasksImmediately = true;
-
-  public void runTasksImmediately(boolean runTasksImmediately) {
-    this.runTasksImmediately = runTasksImmediately;
-  }
-
-  public void triggerActions() {
-    delegate.triggerActions();
+  public Runnable awaitRunnable() throws InterruptedException {
+    return events.pollFirst(5, TimeUnit.SECONDS);
   }
 
   @Override public Worker createWorker() {
@@ -39,23 +35,17 @@ final class TestScheduler extends Scheduler {
   }
 
   class TestWorker extends Worker {
-    private final Worker delegateWorker = delegate.createWorker();
-
     @Override
     public Disposable schedule(@NonNull Runnable run, long delay, @NonNull TimeUnit unit) {
-      Disposable disposable = delegateWorker.schedule(run, delay, unit);
-      if (runTasksImmediately) {
-        triggerActions();
-      }
-      return disposable;
+      events.add(run);
+      return Disposables.fromRunnable(() -> events.remove(run));
     }
 
     @Override public void dispose() {
-      delegateWorker.dispose();
     }
 
     @Override public boolean isDisposed() {
-      return delegateWorker.isDisposed();
+      return false;
     }
   }
 }
