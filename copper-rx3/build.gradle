@@ -4,7 +4,7 @@ apply plugin: 'com.vanniktech.maven.publish'
 
 dependencies {
   api project(':copper')
-  api deps.rxJava2
+  api deps.rxJava3
   api deps.kotlinStdLib
   api deps.androidx.annotations
 

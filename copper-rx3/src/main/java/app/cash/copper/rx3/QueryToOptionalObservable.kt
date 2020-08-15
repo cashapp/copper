@@ -13,30 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package app.cash.copper.rx2
+package app.cash.copper.rx3
 
 import android.database.Cursor
+import androidx.annotation.RequiresApi
 import app.cash.copper.Query
-import io.reactivex.Observable
-import io.reactivex.Observer
-import io.reactivex.exceptions.Exceptions
-import io.reactivex.observers.DisposableObserver
-import io.reactivex.plugins.RxJavaPlugins
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Observer
+import io.reactivex.rxjava3.exceptions.Exceptions
+import io.reactivex.rxjava3.observers.DisposableObserver
+import io.reactivex.rxjava3.plugins.RxJavaPlugins
+import java.util.Optional
 
-internal class QueryToOneObservable<T : Any>(
+@RequiresApi(24)
+internal class QueryToOptionalObservable<T : Any>(
   private val upstream: Observable<out Query>,
-  private val mapper: (Cursor) -> T,
-  /** A null `defaultValue` means nothing will be emitted when empty. */
-  private val defaultValue: T?
-) : Observable<T>() {
-  override fun subscribeActual(observer: Observer<in T>) {
-    upstream.subscribe(MappingObserver(observer, mapper, defaultValue))
+  private val mapper: (Cursor) -> T
+) : Observable<Optional<T>>() {
+  override fun subscribeActual(observer: Observer<in Optional<T>>) {
+    upstream.subscribe(MappingObserver(observer, mapper))
   }
 
   private class MappingObserver<T : Any>(
-    private val downstream: Observer<in T>,
-    private val mapper: (Cursor) -> T,
-    private val defaultValue: T?
+    private val downstream: Observer<in Optional<T>>,
+    private val mapper: (Cursor) -> T
   ) : DisposableObserver<Query>() {
     override fun onStart() {
       downstream.onSubscribe(this)
@@ -44,21 +44,19 @@ internal class QueryToOneObservable<T : Any>(
 
     override fun onNext(query: Query) {
       try {
-        val item = query.run()?.use { cursor ->
+        var item: T? = null
+        query.run()?.use { cursor ->
           if (cursor.moveToNext()) {
-            val item = mapper(cursor)
+            item = mapper(cursor)
             if (item == null) {
               downstream.onError(NullPointerException("QueryToOne mapper returned null"))
               return
             }
             check(!cursor.moveToNext()) { "Cursor returned more than 1 row" }
-            item
-          } else {
-            defaultValue
           }
         }
-        if (item != null && !isDisposed) {
-          downstream.onNext(item)
+        if (!isDisposed) {
+          downstream.onNext(Optional.ofNullable(item))
         }
       } catch (e: Throwable) {
         Exceptions.throwIfFatal(e)

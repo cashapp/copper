@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package app.cash.copper.rx2
+package app.cash.copper.rx3
 
 import android.database.Cursor
 import app.cash.copper.Query
-import io.reactivex.Observable
-import io.reactivex.Observer
-import io.reactivex.exceptions.Exceptions
-import io.reactivex.observers.DisposableObserver
-import io.reactivex.plugins.RxJavaPlugins
+import io.reactivex.rxjava3.core.Observable
+import io.reactivex.rxjava3.core.Observer
+import io.reactivex.rxjava3.exceptions.Exceptions
+import io.reactivex.rxjava3.observers.DisposableObserver
+import io.reactivex.rxjava3.plugins.RxJavaPlugins
 
 internal class QueryToOneObservable<T : Any>(
   private val upstream: Observable<out Query>,
