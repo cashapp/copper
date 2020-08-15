@@ -18,13 +18,14 @@ package app.cash.copper.rx2
 import android.database.Cursor
 import app.cash.copper.Query
 import io.reactivex.Observable
+import io.reactivex.ObservableSource
 import io.reactivex.Observer
 import io.reactivex.exceptions.Exceptions
 import io.reactivex.observers.DisposableObserver
 import io.reactivex.plugins.RxJavaPlugins
 
 internal class QueryToOneObservable<T : Any>(
-  private val upstream: Observable<out Query>,
+  private val upstream: ObservableSource<out Query>,
   private val mapper: (Cursor) -> T,
   /** A null `defaultValue` means nothing will be emitted when empty. */
   private val defaultValue: T?
