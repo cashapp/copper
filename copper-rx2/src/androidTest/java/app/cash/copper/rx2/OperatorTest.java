@@ -28,7 +28,7 @@ import static io.reactivex.Observable.just;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
-public final class QueryOperatorTest {
+public final class OperatorTest {
   @Test public void mapToOne() {
     just(queryOf("alice", "Alice Allison"))
         .to(o -> RxContentResolver.mapToOne(o, Employee.MAPPER))
