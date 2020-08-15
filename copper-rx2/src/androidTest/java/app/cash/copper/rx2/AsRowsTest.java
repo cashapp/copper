@@ -15,7 +15,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 @RunWith(AndroidJUnit4.class)
 @SuppressWarnings("CheckResult")
-public final class QueryAsRowsTest {
+public final class AsRowsTest {
   @Test public void asRowsEmpty() {
     RxContentResolver.asRows(queryOf(), Employee.MAPPER)
         .test()
