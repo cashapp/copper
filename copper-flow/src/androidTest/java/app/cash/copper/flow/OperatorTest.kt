@@ -39,6 +39,15 @@ class OperatorTest {
       }
   }
 
+  @Test fun mapToOneWithDefault() = runBlocking {
+    flowOf(queryOf("alice", "Alice Allison"))
+      .mapToOne(default = Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
+      .test {
+        assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
+        expectComplete()
+      }
+  }
+
   @Test fun mapToOneThrowsOnMultipleRows() = runBlocking {
     flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
       .mapToOne(mapper = Employee.MAPPER)
@@ -50,6 +59,23 @@ class OperatorTest {
       }
   }
 
+  @Test fun mapToOneEmptyIgnoredWithoutDefault() = runBlocking {
+    flowOf(queryOf())
+      .mapToOne(mapper = Employee.MAPPER)
+      .test {
+        expectComplete()
+      }
+  }
+
+  @Test fun mapToOneWithDefaultEmpty() = runBlocking {
+    flowOf(queryOf())
+      .mapToOne(default = Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
+      .test {
+        assertThat(expectItem()).isEqualTo(Employee("fred", "Fred Frederson"))
+        expectComplete()
+      }
+  }
+
   @Test fun mapToOneIgnoresNullCursor() = runBlocking {
     flowOf(NullQuery)
       .mapToOne(mapper = Employee.MAPPER)
@@ -58,31 +84,10 @@ class OperatorTest {
       }
   }
 
-  @Test fun mapToOneOrDefault() = runBlocking {
-    flowOf(queryOf("alice", "Alice Allison"))
-      .mapToOneOrDefault(Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
-      .test {
-        assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
-        expectComplete()
-      }
-  }
-
-  @Test fun mapToOneOrDefaultThrowsOnMultipleRows() = runBlocking {
-    flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
-      .mapToOneOrDefault(Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
-      .test {
-        expectError().assert {
-          isInstanceOf(IllegalStateException::class.java)
-          hasMessageThat().isEqualTo("Cursor returned more than 1 row")
-        }
-      }
-  }
-
-  @Test fun mapToOneOrDefaultReturnsDefaultWhenNullCursor() = runBlocking {
+  @Test fun mapToOneWithDefaultIgnoresNullCursor() = runBlocking {
     flowOf(NullQuery)
-      .mapToOneOrDefault(Employee("bob", "Bob Bobberson"), mapper = Employee.MAPPER)
+      .mapToOne(default = Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
       .test {
-        assertThat(expectItem()).isEqualTo(Employee("bob", "Bob Bobberson"))
         expectComplete()
       }
   }
@@ -117,18 +122,18 @@ class OperatorTest {
       }
   }
 
-  @Test fun mapToNullable() = runBlocking {
+  @Test fun mapToOneOrNull() = runBlocking {
     flowOf(queryOf("alice", "Alice Allison"))
-      .mapToNullable(mapper = Employee.MAPPER)
+      .mapToOneOrNull(mapper = Employee.MAPPER)
       .test {
         assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
         expectComplete()
       }
   }
 
-  @Test fun mapToNullableThrowsOnMultipleRows() = runBlocking {
+  @Test fun mapToOneOrNullThrowsOnMultipleRows() = runBlocking {
     flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
-      .mapToNullable(mapper = Employee.MAPPER)
+      .mapToOneOrNull(mapper = Employee.MAPPER)
       .test {
         expectError().assert {
           isInstanceOf(IllegalStateException::class.java)
@@ -137,9 +142,9 @@ class OperatorTest {
       }
   }
 
-  @Test fun mapToNullableIgnoresNullCursor() = runBlocking {
+  @Test fun mapToOneOrNullIgnoresNullCursor() = runBlocking {
     flowOf(NullQuery)
-      .mapToNullable(mapper = Employee.MAPPER)
+      .mapToOneOrNull(mapper = Employee.MAPPER)
       .test {
         expectComplete()
       }

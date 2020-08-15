@@ -135,7 +135,7 @@ fun <T : Any> Query.asRows(
  *
  * It is an error for a query to pass through this operator with more than 1 row in its result
  * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
- * do not emit an item.
+ * emit [default], or do not emit if [default] is null.
  *
  * This operator ignores `null` cursors returned from [Query.run].
  *
@@ -143,6 +143,7 @@ fun <T : Any> Query.asRows(
  */
 @CheckResult
 fun <T : Any> Flow<Query>.mapToOne(
+  default: T? = null,
   dispatcher: CoroutineDispatcher = Dispatchers.IO,
   mapper: (Cursor) -> T
 ): Flow<T> = transform { query ->
@@ -153,45 +154,13 @@ fun <T : Any> Flow<Query>.mapToOne(
         check(!cursor.moveToNext()) { "Cursor returned more than 1 row" }
         item
       } else {
-        null
+        default
       }
     }
   }
   if (item != null) {
     emit(item)
   }
-}
-
-/**
- * Transforms a query flow returning a single row to a `T` using [mapper].
- *
- * It is an error for a query to pass through this operator with more than 1 row in its result
- * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
- * emit `defaultValue`.
- *
- * This operator emits [default] if `null` is returned from [Query.run].
- *
- * @param mapper Maps the current [Cursor] row to `T`. May not return null.
- * @param default Value returned if result set is empty
- */
-@CheckResult
-fun <T : Any> Flow<Query>.mapToOneOrDefault(
-  default: T,
-  dispatcher: CoroutineDispatcher = Dispatchers.IO,
-  mapper: (Cursor) -> T
-): Flow<T> = transform { query ->
-  val item = withContext(dispatcher) {
-    query.run()?.use { cursor ->
-      if (cursor.moveToNext()) {
-        val item = mapper(cursor)
-        check(!cursor.moveToNext()) { "Cursor returned more than 1 row" }
-        item
-      } else {
-        null
-      }
-    }
-  }
-  emit(item ?: default)
 }
 
 /**
@@ -206,7 +175,7 @@ fun <T : Any> Flow<Query>.mapToOneOrDefault(
  * @param mapper Maps the current [Cursor] row to `T`. May not return null.
  */
 @CheckResult
-fun <T : Any> Flow<Query>.mapToNullable(
+fun <T : Any> Flow<Query>.mapToOneOrNull(
   dispatcher: CoroutineDispatcher = Dispatchers.IO,
   mapper: (Cursor) -> T
 ): Flow<T?> = transform { query ->

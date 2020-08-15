@@ -127,34 +127,16 @@ fun <T : Any> Query.asRows(mapper: (Cursor) -> T): Observable<T> {
  *
  * It is an error for a query to pass through this operator with more than 1 row in its result
  * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
- * do not emit an item.
+ * emit [default], or do not emit if [default] is null.
  *
  * This operator ignores `null` cursors returned from [run].
  *
  * @param mapper Maps the current [Cursor] row to `T`. May not return null.
  */
 @CheckResult
+@JvmOverloads
 fun <T : Any> Observable<out Query>.mapToOne(
-  mapper: (Cursor) -> T
-): Observable<T> {
-  return QueryToOneObservable(this, mapper, null)
-}
-
-/**
- * Transforms a query observable returning a single row to a `T` using [mapper].
- *
- * It is an error for a query to pass through this operator with more than 1 row in its result
- * set. Use `LIMIT 1` on the underlying SQL query to prevent this. Result sets with 0 rows
- * emit `defaultValue`.
- *
- * This operator emits `defaultValue` if `null` is returned from [run].
- *
- * @param mapper Maps the current [Cursor] row to `T`. May not return null.
- * @param default Value returned if result set is empty
- */
-@CheckResult
-fun <T : Any> Observable<out Query>.mapToOneOrDefault(
-  default: T,
+  default: T? = null,
   mapper: (Cursor) -> T
 ): Observable<T> {
   return QueryToOneObservable(this, mapper, default)
