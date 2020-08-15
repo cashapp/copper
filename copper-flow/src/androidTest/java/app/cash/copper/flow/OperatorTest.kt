@@ -15,6 +15,7 @@
  */
 package app.cash.copper.flow
 
+import android.database.Cursor
 import app.cash.copper.testing.Employee
 import app.cash.copper.testing.Employee.Companion.queryOf
 import app.cash.copper.testing.NullQuery
@@ -110,6 +111,26 @@ class OperatorTest {
       .mapToList(mapper = Employee.MAPPER)
       .test {
         assertThat(expectItem()).isEmpty()
+        expectComplete()
+      }
+  }
+
+  @Test fun mapToListReturnsNullOnMapperNull() = runBlocking {
+    val mapToNull = object : (Cursor) -> Employee? {
+      private var count = 0
+
+      override fun invoke(cursor: Cursor): Employee? {
+        return if (count++ == 2) null else Employee.MAPPER.invoke(cursor)
+      }
+    }
+    flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson"))
+      .mapToList(mapper = mapToNull)
+      .test {
+        assertThat(expectItem()).containsExactly(
+          Employee("alice", "Alice Allison"),
+          Employee("bob", "Bob Bobberson"),
+          null
+        )
         expectComplete()
       }
   }

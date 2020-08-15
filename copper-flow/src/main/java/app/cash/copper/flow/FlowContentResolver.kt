@@ -213,7 +213,7 @@ fun <T : Any> Flow<Query>.mapToOneOrNull(
  * @param mapper Maps the current [Cursor] row to `T`. May not return null.
  */
 @CheckResult
-fun <T : Any> Flow<Query>.mapToList(
+fun <T> Flow<Query>.mapToList(
   dispatcher: CoroutineDispatcher = Dispatchers.IO,
   mapper: (Cursor) -> T
 ): Flow<List<T>> = transform { query ->
