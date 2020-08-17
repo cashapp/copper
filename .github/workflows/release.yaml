@@ -31,6 +31,15 @@ jobs:
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.ARTIFACT_SIGNING_PRIVATE_KEY }}
         run: ./gradlew build publish
 
+  github_release:
+    runs-on: ubuntu-latest
+    needs:
+      - publish
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # Can only run on Linux.
       - name: Extract release notes
         id: release_notes
         uses: ffurrer2/extract-release-notes@v1
@@ -39,6 +48,5 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           body: ${{ steps.release_notes.outputs.release_notes }}
-          files: build/libs/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
