@@ -12,7 +12,6 @@ contentResolver.observeQuery(uri).collect { query ->
 
 ## Download
 
-<!--
 ```groovy
 // Kotlin coroutines:
 implementation 'app.cash.copper:copper-flow:1.0.0'
@@ -23,7 +22,6 @@ implementation 'app.cash.copper:copper-rx3:1.0.0'
 // RxJava 2
 implementation 'app.cash.copper:copper-rx2:1.0.0'
 ```
--->
 
 <details>
 <summary>Snapshots of the development version are available in Sonatype's snapshots repository.</summary>
@@ -36,9 +34,9 @@ repositories {
   }
 }
 dependencies {
-  testImplementation 'app.cash.copper:copper-flow:1.0.0-SNAPSHOT'
-  testImplementation 'app.cash.copper:copper-rx2:1.0.0-SNAPSHOT'
-  testImplementation 'app.cash.copper:copper-rx3:1.0.0-SNAPSHOT'
+  testImplementation 'app.cash.copper:copper-flow:1.1.0-SNAPSHOT'
+  testImplementation 'app.cash.copper:copper-rx2:1.1.0-SNAPSHOT'
+  testImplementation 'app.cash.copper:copper-rx3:1.1.0-SNAPSHOT'
 }
 ```
 
