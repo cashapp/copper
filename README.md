@@ -13,7 +13,7 @@ contentResolver.observeQuery(uri).collect { query ->
 ## Download
 
 ```groovy
-// Kotlin coroutines:
+// Kotlin coroutines
 implementation 'app.cash.copper:copper-flow:1.0.0'
 
 // RxJava 3
@@ -51,7 +51,7 @@ change your calls from `query` to `observeQuery` for a reactive version.
 
 ```kotlin
 contentResolver.observeQuery(uri).collect { query ->
-  query.run()?.let { cursor ->
+  query.run()?.use { cursor ->
     // ...
   }
 }
