@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.withContext
-import java.util.ArrayList
 
 /**
  * Create an observable which will notify subscribers with a [query][Query] for
@@ -74,7 +73,7 @@ fun ContentResolver.observeQuery(
     val channel = Channel<Unit>(CONFLATED)
     val observer = object : ContentObserver(mainThread) {
       override fun onChange(selfChange: Boolean) {
-        channel.offer(Unit)
+        channel.trySend(Unit)
       }
     }
 
