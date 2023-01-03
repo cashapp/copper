@@ -21,7 +21,7 @@ class AsRowsTest {
     queryOf()
       .asRows(mapper = Employee.MAPPER)
       .test {
-        expectComplete()
+        awaitComplete()
       }
   }
 
@@ -29,9 +29,9 @@ class AsRowsTest {
     queryOf("alice", "Alice Allison", "bob", "Bob Bobberson")
       .asRows(mapper = Employee.MAPPER)
       .test {
-        assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
-        assertThat(expectItem()).isEqualTo(Employee("bob", "Bob Bobberson"))
-        expectComplete()
+        assertThat(awaitItem()).isEqualTo(Employee("alice", "Alice Allison"))
+        assertThat(awaitItem()).isEqualTo(Employee("bob", "Bob Bobberson"))
+        awaitComplete()
       }
   }
 
@@ -44,8 +44,8 @@ class AsRowsTest {
       }
       .take(1)
       .test {
-        expectItem()
-        expectComplete()
+        awaitItem()
+        awaitComplete()
       }
     // This is 2 not 1 because of how the implementation works. It will always be N+1.
     assertThat(count).isEqualTo(2)
@@ -59,7 +59,7 @@ class AsRowsTest {
         Employee.MAPPER.invoke(it)
       }
       .test {
-        expectComplete()
+        awaitComplete()
       }
     assertThat(count).isEqualTo(0)
   }

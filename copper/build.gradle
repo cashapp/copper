@@ -3,7 +3,6 @@ apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'com.vanniktech.maven.publish'
 
 dependencies {
-  api deps.kotlinStdLib
   api deps.androidx.annotations
 }
 

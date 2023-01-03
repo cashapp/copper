@@ -35,8 +35,8 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison"))
       .mapToOne(mapper = Employee.MAPPER)
       .test {
-        assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
-        expectComplete()
+        assertThat(awaitItem()).isEqualTo(Employee("alice", "Alice Allison"))
+        awaitComplete()
       }
   }
 
@@ -44,8 +44,8 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison"))
       .mapToOne(default = Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
       .test {
-        assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
-        expectComplete()
+        assertThat(awaitItem()).isEqualTo(Employee("alice", "Alice Allison"))
+        awaitComplete()
       }
   }
 
@@ -53,7 +53,7 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
       .mapToOne(mapper = Employee.MAPPER)
       .test {
-        expectError().assert {
+        awaitError().assert {
           isInstanceOf(IllegalStateException::class.java)
           hasMessageThat().isEqualTo("Cursor returned more than 1 row")
         }
@@ -64,7 +64,7 @@ class OperatorTest {
     flowOf(queryOf())
       .mapToOne(mapper = Employee.MAPPER)
       .test {
-        expectComplete()
+        awaitComplete()
       }
   }
 
@@ -72,8 +72,8 @@ class OperatorTest {
     flowOf(queryOf())
       .mapToOne(default = Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
       .test {
-        assertThat(expectItem()).isEqualTo(Employee("fred", "Fred Frederson"))
-        expectComplete()
+        assertThat(awaitItem()).isEqualTo(Employee("fred", "Fred Frederson"))
+        awaitComplete()
       }
   }
 
@@ -81,7 +81,7 @@ class OperatorTest {
     flowOf(NullQuery)
       .mapToOne(mapper = Employee.MAPPER)
       .test {
-        expectComplete()
+        awaitComplete()
       }
   }
 
@@ -89,7 +89,7 @@ class OperatorTest {
     flowOf(NullQuery)
       .mapToOne(default = Employee("fred", "Fred Frederson"), mapper = Employee.MAPPER)
       .test {
-        expectComplete()
+        awaitComplete()
       }
   }
 
@@ -97,12 +97,12 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson"))
       .mapToList(mapper = Employee.MAPPER)
       .test {
-        assertThat(expectItem()).containsExactly(
+        assertThat(awaitItem()).containsExactly(
           Employee("alice", "Alice Allison"),
           Employee("bob", "Bob Bobberson"),
           Employee("eve", "Eve Evenson")
         )
-        expectComplete()
+        awaitComplete()
       }
   }
 
@@ -110,8 +110,8 @@ class OperatorTest {
     flowOf(queryOf())
       .mapToList(mapper = Employee.MAPPER)
       .test {
-        assertThat(expectItem()).isEmpty()
-        expectComplete()
+        assertThat(awaitItem()).isEmpty()
+        awaitComplete()
       }
   }
 
@@ -126,12 +126,12 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson", "eve", "Eve Evenson"))
       .mapToList(mapper = mapToNull)
       .test {
-        assertThat(expectItem()).containsExactly(
+        assertThat(awaitItem()).containsExactly(
           Employee("alice", "Alice Allison"),
           Employee("bob", "Bob Bobberson"),
           null
         )
-        expectComplete()
+        awaitComplete()
       }
   }
 
@@ -139,7 +139,7 @@ class OperatorTest {
     flowOf(NullQuery)
       .mapToList(mapper = Employee.MAPPER)
       .test {
-        expectComplete()
+        awaitComplete()
       }
   }
 
@@ -147,8 +147,8 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison"))
       .mapToOneOrNull(mapper = Employee.MAPPER)
       .test {
-        assertThat(expectItem()).isEqualTo(Employee("alice", "Alice Allison"))
-        expectComplete()
+        assertThat(awaitItem()).isEqualTo(Employee("alice", "Alice Allison"))
+        awaitComplete()
       }
   }
 
@@ -156,7 +156,7 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
       .mapToOneOrNull(mapper = Employee.MAPPER)
       .test {
-        expectError().assert {
+        awaitError().assert {
           isInstanceOf(IllegalStateException::class.java)
           hasMessageThat().isEqualTo("Cursor returned more than 1 row")
         }
@@ -167,7 +167,7 @@ class OperatorTest {
     flowOf(NullQuery)
       .mapToOneOrNull(mapper = Employee.MAPPER)
       .test {
-        expectComplete()
+        awaitComplete()
       }
   }
 }

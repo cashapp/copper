@@ -3,7 +3,6 @@ apply plugin: 'org.jetbrains.kotlin.android'
 
 dependencies {
   api project(':copper')
-  api deps.kotlinStdLib
   api deps.truth
 }
 
