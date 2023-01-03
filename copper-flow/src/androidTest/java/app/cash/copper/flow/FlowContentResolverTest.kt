@@ -42,12 +42,12 @@ class FlowContentResolverTest : ProviderTestCase2<TestContentProvider>(
 
   fun testCreateQueryObservesInsert() = runBlocking {
     contentResolver.observeQuery(TABLE).test {
-      expectItem().assert {
+      awaitItem().assert {
         isExhausted()
       }
 
       contentResolver.insert(TABLE, testValues("key1", "val1"))
-      expectItem().assert {
+      awaitItem().assert {
         hasRow("key1", "val1")
         isExhausted()
       }
@@ -60,13 +60,13 @@ class FlowContentResolverTest : ProviderTestCase2<TestContentProvider>(
     contentResolver.insert(TABLE, testValues("key1", "val1"))
 
     contentResolver.observeQuery(TABLE).test {
-      expectItem().assert {
+      awaitItem().assert {
         hasRow("key1", "val1")
         isExhausted()
       }
 
       contentResolver.update(TABLE, testValues("key1", "val2"), null, null)
-      expectItem().assert {
+      awaitItem().assert {
         hasRow("key1", "val2")
         isExhausted()
       }
@@ -79,13 +79,13 @@ class FlowContentResolverTest : ProviderTestCase2<TestContentProvider>(
     contentResolver.insert(TABLE, testValues("key1", "val1"))
 
     contentResolver.observeQuery(TABLE).test {
-      expectItem().assert {
+      awaitItem().assert {
         hasRow("key1", "val1")
         isExhausted()
       }
 
       contentResolver.delete(TABLE, null, null)
-      expectItem().assert {
+      awaitItem().assert {
         isExhausted()
       }
 
