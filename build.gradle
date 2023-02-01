@@ -1,6 +1,6 @@
 buildscript {
   ext.versions = [
-      'minSdk': 14,
+      'minSdk': 16,
       'compileSdk': 27,
   ]
   ext.deps = [
