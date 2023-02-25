@@ -39,6 +39,34 @@ subprojects {
     jcenter()
   }
 
+  plugins.withId('org.jetbrains.kotlin.android') {
+    kotlin {
+      jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+      }
+    }
+  }
+
+  plugins.withId('com.android.library') {
+    android {
+      compileSdkVersion versions.compileSdk
+
+      defaultConfig {
+        minSdkVersion versions.minSdk
+      }
+
+      compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+      }
+
+      lintOptions {
+        textOutput 'stdout'
+        textReport true
+      }
+    }
+  }
+
   tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinCompile).configureEach { task ->
     task.kotlinOptions {
       freeCompilerArgs += [

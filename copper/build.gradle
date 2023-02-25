@@ -5,21 +5,3 @@ apply plugin: 'com.vanniktech.maven.publish'
 dependencies {
   api deps.androidx.annotations
 }
-
-android {
-  compileSdkVersion versions.compileSdk
-
-  defaultConfig {
-    minSdkVersion versions.minSdk
-  }
-
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
-  }
-
-  lintOptions {
-    textOutput 'stdout'
-    textReport true
-  }
-}
