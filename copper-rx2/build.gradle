@@ -13,21 +13,7 @@ dependencies {
 }
 
 android {
-  compileSdkVersion versions.compileSdk
-
   defaultConfig {
-    minSdkVersion versions.minSdk
-
     testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
-  }
-
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
-  }
-
-  lintOptions {
-    textOutput 'stdout'
-    textReport true
   }
 }
