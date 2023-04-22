@@ -13,6 +13,8 @@ dependencies {
 }
 
 android {
+  namespace "app.cash.copper.rx2"
+
   defaultConfig {
     testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
   }

@@ -5,3 +5,7 @@ apply plugin: 'com.vanniktech.maven.publish'
 dependencies {
   api deps.androidx.annotations
 }
+
+android {
+  namespace "app.cash.copper"
+}

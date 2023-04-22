@@ -5,3 +5,7 @@ dependencies {
   api project(':copper')
   api deps.truth
 }
+
+android {
+  namespace "app.cash.copper.testing"
+}
