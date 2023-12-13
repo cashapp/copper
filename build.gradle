@@ -5,7 +5,7 @@ buildscript {
   ]
   ext.deps = [
       'androidx': [
-          'annotations': 'androidx.annotation:annotation:1.7.0',
+          'annotations': 'androidx.annotation:annotation:1.7.1',
           'test': [
               'runner': 'androidx.test:runner:1.5.2',
           ],
