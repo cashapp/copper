@@ -15,7 +15,7 @@ buildscript {
       'rxJava3': 'io.reactivex.rxjava3:rxjava:3.1.8',
       'junit': 'junit:junit:4.13.2',
       'truth': 'com.google.truth:truth:1.4.2',
-      'turbine': 'app.cash.turbine:turbine:1.0.0',
+      'turbine': 'app.cash.turbine:turbine:1.1.0',
   ]
 
   repositories {
