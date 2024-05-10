@@ -10,7 +10,7 @@ buildscript {
               'runner': 'androidx.test:runner:1.5.2',
           ],
       ],
-      'kotlinCoroutines': 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0',
+      'kotlinCoroutines': 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1',
       'rxJava2': 'io.reactivex.rxjava2:rxjava:2.2.21',
       'rxJava3': 'io.reactivex.rxjava3:rxjava:3.1.8',
       'junit': 'junit:junit:4.13.2',
