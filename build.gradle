@@ -12,7 +12,7 @@ buildscript {
       ],
       'kotlinCoroutines': 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1',
       'rxJava2': 'io.reactivex.rxjava2:rxjava:2.2.21',
-      'rxJava3': 'io.reactivex.rxjava3:rxjava:3.1.8',
+      'rxJava3': 'io.reactivex.rxjava3:rxjava:3.1.9',
       'junit': 'junit:junit:4.13.2',
       'truth': 'com.google.truth:truth:1.4.4',
       'turbine': 'app.cash.turbine:turbine:1.1.0',
