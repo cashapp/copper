@@ -31,6 +31,10 @@ jobs:
 
       - run: ./gradlew build assembleAndroidTest
 
+        # Clear out the command-line tools, the emulator runner will reinstall, but latest version
+        # Upstream issue: https://github.com/ReactiveCircus/android-emulator-runner/issues/400
+      - run: sudo \rm -fr "$ANDROID_HOME/cmdline-tools/latest"
+
       - name: Run Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
