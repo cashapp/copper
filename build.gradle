@@ -3,20 +3,6 @@ buildscript {
       'minSdk': 16,
       'compileSdk': 27,
   ]
-  ext.deps = [
-      'androidx': [
-          'annotations': 'androidx.annotation:annotation:1.7.1',
-          'test': [
-              'runner': 'androidx.test:runner:1.5.2',
-          ],
-      ],
-      'kotlinCoroutines': 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1',
-      'rxJava2': 'io.reactivex.rxjava2:rxjava:2.2.21',
-      'rxJava3': 'io.reactivex.rxjava3:rxjava:3.1.10',
-      'junit': 'junit:junit:4.13.2',
-      'truth': 'com.google.truth:truth:1.4.4',
-      'turbine': 'app.cash.turbine:turbine:1.2.0',
-  ]
 
   repositories {
     mavenCentral()
@@ -25,10 +11,10 @@ buildscript {
   }
 
   dependencies {
-    classpath 'com.android.tools.build:gradle:8.8.1'
-    classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.10'
-    classpath 'org.jetbrains.dokka:dokka-gradle-plugin:2.0.0'
-    classpath 'com.vanniktech:gradle-maven-publish-plugin:0.12.0'
+    classpath libs.android.gradlePlugin
+    classpath libs.kotlin.gradlePlugin
+    classpath libs.dokkaGradlePlugin
+    classpath libs.gradleMavenPublishPlugin
   }
 }
 

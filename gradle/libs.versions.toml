@@ -1,0 +1,16 @@
+[libraries]
+android-gradlePlugin = "com.android.tools.build:gradle:8.8.1"
+
+androidx-annotation = "androidx.annotation:annotation:1.7.1"
+androidx-test-runner = "androidx.test:runner:1.5.2"
+
+kotlin-gradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.10"
+
+rxjava2 = "io.reactivex.rxjava2:rxjava:2.2.21"
+rxjava3 = "io.reactivex.rxjava3:rxjava:3.1.10"
+
+kotlinx-coroutines-core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.1"
+turbine = "app.cash.turbine:turbine:1.2.0"
+truth = "com.google.truth:truth:1.4.4"
+dokkaGradlePlugin = "org.jetbrains.dokka:dokka-gradle-plugin:2.0.0"
+gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.12.0"

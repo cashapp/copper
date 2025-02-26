@@ -4,13 +4,13 @@ apply plugin: 'com.vanniktech.maven.publish'
 
 dependencies {
   api project(':copper')
-  api deps.kotlinCoroutines
-  api deps.androidx.annotations
+  api libs.kotlinx.coroutines.core
+  api libs.androidx.annotation
 
   androidTestImplementation project(':copper-testing')
-  androidTestImplementation deps.androidx.test.runner
-  androidTestImplementation deps.truth
-  androidTestImplementation deps.turbine
+  androidTestImplementation libs.androidx.test.runner
+  androidTestImplementation libs.truth
+  androidTestImplementation libs.turbine
 }
 
 android {

@@ -3,7 +3,7 @@ apply plugin: 'org.jetbrains.kotlin.android'
 
 dependencies {
   api project(':copper')
-  api deps.truth
+  api libs.truth
 }
 
 android {
