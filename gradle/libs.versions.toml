@@ -1,5 +1,5 @@
 [libraries]
-android-gradlePlugin = "com.android.tools.build:gradle:8.9.1"
+android-gradlePlugin = "com.android.tools.build:gradle:8.9.2"
 
 androidx-annotation = "androidx.annotation:annotation:1.9.1"
 androidx-test-runner = "androidx.test:runner:1.5.2"
