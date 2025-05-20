@@ -7,7 +7,6 @@ buildscript {
   repositories {
     mavenCentral()
     google()
-    jcenter()
   }
 
   dependencies {
@@ -22,7 +21,6 @@ subprojects {
   repositories {
     mavenCentral()
     google()
-    jcenter()
   }
 
   plugins.withId('com.android.library') {
