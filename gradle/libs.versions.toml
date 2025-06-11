@@ -10,7 +10,7 @@ rxjava2 = "io.reactivex.rxjava2:rxjava:2.2.21"
 rxjava3 = "io.reactivex.rxjava3:rxjava:3.1.10"
 
 kotlinx-coroutines-core = "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2"
-turbine = "app.cash.turbine:turbine:1.2.0"
+turbine = "app.cash.turbine:turbine:1.2.1"
 truth = "com.google.truth:truth:1.4.4"
 dokkaGradlePlugin = "org.jetbrains.dokka:dokka-gradle-plugin:2.0.0"
 gradleMavenPublishPlugin = "com.vanniktech:gradle-maven-publish-plugin:0.32.0"
