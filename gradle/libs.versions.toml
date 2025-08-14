@@ -4,7 +4,7 @@ android-gradlePlugin = "com.android.tools.build:gradle:8.12.0"
 androidx-annotation = "androidx.annotation:annotation:1.9.1"
 androidx-test-runner = "androidx.test:runner:1.5.2"
 
-kotlin-gradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.0"
+kotlin-gradlePlugin = "org.jetbrains.kotlin:kotlin-gradle-plugin:2.2.10"
 
 rxjava2 = "io.reactivex.rxjava2:rxjava:2.2.21"
 rxjava3 = "io.reactivex.rxjava3:rxjava:3.1.11"
