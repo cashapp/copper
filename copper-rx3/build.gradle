@@ -9,7 +9,7 @@ dependencies {
 
   androidTestImplementation project(':copper-testing')
   androidTestImplementation libs.androidx.test.runner
-  androidTestImplementation libs.truth
+  androidTestImplementation libs.assertk
 }
 
 android {
@@ -17,5 +17,9 @@ android {
 
   defaultConfig {
     testInstrumentationRunner 'androidx.test.runner.AndroidJUnitRunner'
+  }
+
+  packaging {
+    excludes += "META-INF/COPYRIGHT"
   }
 }

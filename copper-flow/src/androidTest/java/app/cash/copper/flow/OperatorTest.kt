@@ -19,14 +19,18 @@ import android.database.Cursor
 import app.cash.copper.testing.Employee
 import app.cash.copper.testing.Employee.Companion.queryOf
 import app.cash.copper.testing.NullQuery
-import app.cash.copper.testing.assert
 import app.cash.turbine.test
-import com.google.common.truth.Truth.assertThat
+import assertk.assertThat
+import assertk.assertions.containsExactly
+import assertk.assertions.hasMessage
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
+import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
-import kotlin.time.ExperimentalTime
 
 @ExperimentalCoroutinesApi
 @ExperimentalTime
@@ -53,10 +57,9 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
       .mapToOne(mapper = Employee.MAPPER)
       .test {
-        awaitError().assert {
-          isInstanceOf(IllegalStateException::class.java)
-          hasMessageThat().isEqualTo("Cursor returned more than 1 row")
-        }
+        assertThat(awaitError())
+          .isInstanceOf<IllegalStateException>()
+          .hasMessage("Cursor returned more than 1 row")
       }
   }
 
@@ -156,10 +159,9 @@ class OperatorTest {
     flowOf(queryOf("alice", "Alice Allison", "bob", "Bob Bobberson"))
       .mapToOneOrNull(mapper = Employee.MAPPER)
       .test {
-        awaitError().assert {
-          isInstanceOf(IllegalStateException::class.java)
-          hasMessageThat().isEqualTo("Cursor returned more than 1 row")
-        }
+        assertThat(awaitError())
+          .isInstanceOf<IllegalStateException>()
+          .hasMessage("Cursor returned more than 1 row")
       }
   }
 

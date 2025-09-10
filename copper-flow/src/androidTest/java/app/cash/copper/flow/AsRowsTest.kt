@@ -5,13 +5,14 @@ import app.cash.copper.testing.Employee
 import app.cash.copper.testing.Employee.Companion.queryOf
 import app.cash.copper.testing.NullQuery
 import app.cash.turbine.test
-import com.google.common.truth.Truth.assertThat
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
-import kotlin.time.ExperimentalTime
 
 @ExperimentalCoroutinesApi
 @ExperimentalTime
