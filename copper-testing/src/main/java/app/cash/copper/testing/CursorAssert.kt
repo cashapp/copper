@@ -2,20 +2,19 @@ package app.cash.copper.testing
 
 import android.database.Cursor
 import app.cash.copper.Query
-import com.google.common.truth.Truth.assertWithMessage
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isTrue
 
 class CursorAssert(private val cursor: Cursor) {
   private var row = 0
 
   fun hasRow(vararg values: Any?) = apply {
-    assertWithMessage("row " + (row + 1) + " exists")
-      .that(cursor.moveToNext())
-      .isTrue()
+    assertThat(cursor.moveToNext(), name = "row ${row + 1} exists").isTrue()
     row += 1
-    assertWithMessage("column count").that(cursor.columnCount).isEqualTo(values.size)
+    assertThat(cursor.columnCount, name = "column count").isEqualTo(values.size)
     for (i in values.indices) {
-      assertWithMessage("row " + row + " column '" + cursor.getColumnName(i) + "'")
-        .that(cursor.getString(i))
+      assertThat(cursor.getString(i), name = "row $row column '${cursor.getColumnName(i)}'")
         .isEqualTo(values[i])
     }
   }

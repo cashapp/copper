@@ -11,7 +11,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static app.cash.copper.testing.Employee.queryOf;
-import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(AndroidJUnit4.class)
 @SuppressWarnings("CheckResult")
@@ -45,7 +45,7 @@ public final class AsRowsTest {
         .test()
         .assertValue(new Employee("alice", "Alice Allison"))
         .assertComplete();
-    assertThat(count.get()).isEqualTo(1);
+    assertEquals(1, count.get());
   }
 
   @Test public void asRowsEmptyWhenNullCursor() {
@@ -60,6 +60,6 @@ public final class AsRowsTest {
       .assertNoValues()
       .assertComplete();
 
-    assertThat(count.get()).isEqualTo(0);
+    assertEquals(0, count.get());
   }
 }

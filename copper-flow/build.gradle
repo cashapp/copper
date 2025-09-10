@@ -9,7 +9,7 @@ dependencies {
 
   androidTestImplementation project(':copper-testing')
   androidTestImplementation libs.androidx.test.runner
-  androidTestImplementation libs.truth
+  androidTestImplementation libs.assertk
   androidTestImplementation libs.turbine
 }
 
