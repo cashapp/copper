@@ -1,3 +1,5 @@
+import com.vanniktech.maven.publish.MavenPublishBaseExtension
+
 buildscript {
   ext.versions = [
       'minSdk': 16,
@@ -50,5 +52,15 @@ subprojects {
         '-progressive',
       ]
     }
+  }
+
+  plugins.withId('com.vanniktech.maven.publish') {
+    // Disable Javadoc jars. They're basically useless relics, but enabling this will also cause
+    // AGP to use an old version of Dokka which fails to run on the latest Java versions.
+    extensions.getByType(MavenPublishBaseExtension)
+      .configureBasedOnAppliedPlugins(
+        /* sourcesJar = */ true,
+        /* javadocJar = */ false,
+      )
   }
 }
