@@ -46,7 +46,7 @@ jobs:
       # Can only run on Linux.
       - name: Extract release notes
         id: release_notes
-        uses: ffurrer2/extract-release-notes@v2
+        uses: ffurrer2/extract-release-notes@v3
 
       - name: Create release
         uses: softprops/action-gh-release@v2
